@@ -4,10 +4,12 @@
 
 This is a Magento 2 module called **Rollpix_ImageFlipHover** that provides product image flip on hover functionality for category pages, widgets, sliders, product grids, CMS blocks, and Page Builder content.
 
-## Directory Structure
+**Repository:** https://github.com/ROLLPIX/M2-ImageFlipHover
+
+## Directory Structure (Composer-ready)
 
 ```
-app/code/Rollpix/ImageFlipHover/
+M2-ImageFlipHover/
 ├── etc/                          # Configuration files
 │   ├── module.xml                # Module declaration
 │   ├── di.xml                    # Dependency injection (plugins)
@@ -36,10 +38,25 @@ app/code/Rollpix/ImageFlipHover/
 │   ├── en_US.csv
 │   ├── es_ES.csv
 │   └── es_AR.csv
-├── composer.json
-├── registration.php
-└── README.md
+├── composer.json                 # Composer package definition
+├── registration.php              # Module registration
+├── README.md                     # Documentation
+└── CLAUDE.md                     # This file
 ```
+
+## Installation
+
+### Via Composer
+```bash
+composer require rollpix/module-image-flip-hover
+bin/magento module:enable Rollpix_ImageFlipHover
+bin/magento setup:upgrade
+bin/magento setup:di:compile
+bin/magento cache:flush
+```
+
+### Manual
+Copy contents to `app/code/Rollpix/ImageFlipHover/`
 
 ## Key Technical Details
 
@@ -154,6 +171,7 @@ Custom `media_image` attributes are auto-detected. For special options like "sec
 - Vendor: Rollpix
 - Module: ImageFlipHover
 - Full name: Rollpix_ImageFlipHover
+- Composer package: rollpix/module-image-flip-hover
 
 ## Language
 
