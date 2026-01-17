@@ -425,9 +425,9 @@ bin/magento cache:flush
 MIT License
 
 ## Author
-
+Nicolas Marquevich
 Rollpix - https://rollpix.com
 
 ## Support
 
-For issues and feature requests, please contact support@rollpix.com
+For issues and feature requests, please create an issue
