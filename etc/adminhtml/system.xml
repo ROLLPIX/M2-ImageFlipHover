@@ -8,10 +8,13 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
+        <tab id="rollpix" translate="label" sortOrder="999">
+            <label>ROLLPIX</label>
+        </tab>
         <section id="rollpix_imageflip" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
             <class>separator-top</class>
             <label>Cambio de Imagen al Pasar el Mouse</label>
-            <tab>general</tab>
+            <tab>rollpix</tab>
             <resource>Rollpix_ImageFlipHover::config</resource>
             <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Configuración General</label>
