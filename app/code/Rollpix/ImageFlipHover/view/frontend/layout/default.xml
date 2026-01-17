@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @author Rollpix
+ * @package Rollpix_ImageFlipHover
+ */
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <css src="Rollpix_ImageFlipHover::css/image-flip.css"/>
+    </head>
+    <body>
+        <referenceContainer name="before.body.end">
+            <block class="Magento\Framework\View\Element\Template"
+                   name="rollpix.imageflip.js"
+                   template="Rollpix_ImageFlipHover::js/init.phtml">
+                <arguments>
+                    <argument name="view_model" xsi:type="object">Rollpix\ImageFlipHover\ViewModel\ImageFlip</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

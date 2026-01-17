@@ -1,0 +1,259 @@
+/**
+ * @author Rollpix
+ * @package Rollpix_ImageFlipHover
+ *
+ * Image flip hover styles
+ */
+
+/* Base container styles */
+.product-image-container.has-flip-image {
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.product-image-container.has-flip-image .product-image-wrapper {
+    position: relative;
+    display: block;
+}
+
+.product-image-container.has-flip-image .flip-image-container {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* Image positioning */
+.product-image-container.has-flip-image .primary-image,
+.product-image-container.has-flip-image .flip-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transition-duration: var(--flip-animation-speed, 300ms);
+    transition-timing-function: ease-in-out;
+}
+
+.product-image-container.has-flip-image .flip-image {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* ======================
+   FADE Animation
+   ====================== */
+.product-image-container.flip-animation-fade .primary-image,
+.product-image-container.flip-animation-fade .flip-image {
+    transition-property: opacity, visibility;
+}
+
+.product-image-container.flip-animation-fade.is-flipped .primary-image {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.product-image-container.flip-animation-fade.is-flipped .flip-image {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ======================
+   SLIDE LEFT Animation
+   ====================== */
+.product-image-container.flip-animation-slide-left .primary-image,
+.product-image-container.flip-animation-slide-left .flip-image {
+    transition-property: transform, opacity, visibility;
+}
+
+.product-image-container.flip-animation-slide-left .flip-image {
+    transform: translateX(100%);
+}
+
+.product-image-container.flip-animation-slide-left.is-flipped .primary-image {
+    transform: translateX(-100%);
+    opacity: 0;
+}
+
+.product-image-container.flip-animation-slide-left.is-flipped .flip-image {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ======================
+   SLIDE RIGHT Animation
+   ====================== */
+.product-image-container.flip-animation-slide-right .primary-image,
+.product-image-container.flip-animation-slide-right .flip-image {
+    transition-property: transform, opacity, visibility;
+}
+
+.product-image-container.flip-animation-slide-right .flip-image {
+    transform: translateX(-100%);
+}
+
+.product-image-container.flip-animation-slide-right.is-flipped .primary-image {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+.product-image-container.flip-animation-slide-right.is-flipped .flip-image {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ======================
+   SLIDE UP Animation
+   ====================== */
+.product-image-container.flip-animation-slide-up .primary-image,
+.product-image-container.flip-animation-slide-up .flip-image {
+    transition-property: transform, opacity, visibility;
+}
+
+.product-image-container.flip-animation-slide-up .flip-image {
+    transform: translateY(100%);
+}
+
+.product-image-container.flip-animation-slide-up.is-flipped .primary-image {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+.product-image-container.flip-animation-slide-up.is-flipped .flip-image {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ======================
+   SLIDE DOWN Animation
+   ====================== */
+.product-image-container.flip-animation-slide-down .primary-image,
+.product-image-container.flip-animation-slide-down .flip-image {
+    transition-property: transform, opacity, visibility;
+}
+
+.product-image-container.flip-animation-slide-down .flip-image {
+    transform: translateY(-100%);
+}
+
+.product-image-container.flip-animation-slide-down.is-flipped .primary-image {
+    transform: translateY(100%);
+    opacity: 0;
+}
+
+.product-image-container.flip-animation-slide-down.is-flipped .flip-image {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ======================
+   ZOOM Animation
+   ====================== */
+.product-image-container.flip-animation-zoom .primary-image,
+.product-image-container.flip-animation-zoom .flip-image {
+    transition-property: transform, opacity, visibility;
+}
+
+.product-image-container.flip-animation-zoom .flip-image {
+    transform: scale(0.8);
+}
+
+.product-image-container.flip-animation-zoom.is-flipped .primary-image {
+    transform: scale(1.1);
+    opacity: 0;
+}
+
+.product-image-container.flip-animation-zoom.is-flipped .flip-image {
+    transform: scale(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ======================
+   FLIP HORIZONTAL Animation (3D)
+   ====================== */
+.product-image-container.flip-animation-flip-horizontal {
+    perspective: 1000px;
+}
+
+.product-image-container.flip-animation-flip-horizontal .flip-image-container {
+    transform-style: preserve-3d;
+    transition: transform var(--flip-animation-speed, 300ms) ease-in-out;
+}
+
+.product-image-container.flip-animation-flip-horizontal .primary-image,
+.product-image-container.flip-animation-flip-horizontal .flip-image {
+    backface-visibility: hidden;
+    transition: none;
+}
+
+.product-image-container.flip-animation-flip-horizontal .flip-image {
+    transform: rotateY(180deg);
+    opacity: 1;
+    visibility: visible;
+}
+
+.product-image-container.flip-animation-flip-horizontal.is-flipped .flip-image-container {
+    transform: rotateY(180deg);
+}
+
+/* ======================
+   FLIP VERTICAL Animation (3D)
+   ====================== */
+.product-image-container.flip-animation-flip-vertical {
+    perspective: 1000px;
+}
+
+.product-image-container.flip-animation-flip-vertical .flip-image-container {
+    transform-style: preserve-3d;
+    transition: transform var(--flip-animation-speed, 300ms) ease-in-out;
+}
+
+.product-image-container.flip-animation-flip-vertical .primary-image,
+.product-image-container.flip-animation-flip-vertical .flip-image {
+    backface-visibility: hidden;
+    transition: none;
+}
+
+.product-image-container.flip-animation-flip-vertical .flip-image {
+    transform: rotateX(180deg);
+    opacity: 1;
+    visibility: visible;
+}
+
+.product-image-container.flip-animation-flip-vertical.is-flipped .flip-image-container {
+    transform: rotateX(180deg);
+}
+
+/* ======================
+   Loading state
+   ====================== */
+.product-image-container.has-flip-image .flip-image:not([src]) {
+    display: none;
+}
+
+/* ======================
+   Touch device support
+   ====================== */
+@media (hover: none) {
+    .product-image-container.has-flip-image .flip-image {
+        display: none;
+    }
+}
+
+/* ======================
+   Reduced motion preference
+   ====================== */
+@media (prefers-reduced-motion: reduce) {
+    .product-image-container.has-flip-image .primary-image,
+    .product-image-container.has-flip-image .flip-image,
+    .product-image-container.has-flip-image .flip-image-container {
+        transition-duration: 0ms !important;
+    }
+}

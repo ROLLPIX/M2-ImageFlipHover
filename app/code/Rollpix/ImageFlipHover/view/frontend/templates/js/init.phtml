@@ -1,0 +1,25 @@
+<?php
+/**
+ * @author Rollpix
+ * @package Rollpix_ImageFlipHover
+ *
+ * JavaScript initialization template
+ *
+ * @var \Magento\Framework\View\Element\Template $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @var \Rollpix\ImageFlipHover\ViewModel\ImageFlip $viewModel
+ */
+
+$viewModel = $block->getData('view_model');
+
+if (!$viewModel->isEnabled()) {
+    return;
+}
+?>
+<script type="text/x-magento-init">
+{
+    "*": {
+        "Rollpix_ImageFlipHover/js/image-flip": <?= /* @noEscape */ $viewModel->getConfigJson() ?>
+    }
+}
+</script>

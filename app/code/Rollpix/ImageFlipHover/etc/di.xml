@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @author Rollpix
+ * @package Rollpix_ImageFlipHover
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Plugin to inject flip image data into product image blocks -->
+    <type name="Magento\Catalog\Block\Product\ImageFactory">
+        <plugin name="rollpix_imageflip_image_factory_plugin"
+                type="Rollpix\ImageFlipHover\Plugin\Product\ImagePlugin"
+                sortOrder="10"/>
+    </type>
+
+    <!-- Plugin to modify the product image HTML output -->
+    <type name="Magento\Catalog\Block\Product\Image">
+        <plugin name="rollpix_imageflip_image_block_plugin"
+                type="Rollpix\ImageFlipHover\Plugin\Block\Product\ImagePlugin"
+                sortOrder="100"/>
+    </type>
+
+    <!-- Plugin to add flip image attributes to product collections -->
+    <type name="Magento\Catalog\Model\ResourceModel\Product\Collection">
+        <plugin name="rollpix_imageflip_collection_plugin"
+                type="Rollpix\ImageFlipHover\Plugin\Product\CollectionPlugin"
+                sortOrder="10"/>
+    </type>
+</config>

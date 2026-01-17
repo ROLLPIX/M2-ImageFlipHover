@@ -1,0 +1,63 @@
+<?php
+/**
+ * @author Rollpix
+ * @package Rollpix_ImageFlipHover
+ *
+ * Product image template with flip hover functionality
+ *
+ * @var \Magento\Catalog\Block\Product\Image $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+
+$imageUrl = $block->getImageUrl();
+$flipImageUrl = $block->getData('flip_image_url');
+$hasFlipImage = $block->getData('has_flip_image');
+$animationType = $block->getData('flip_animation_type') ?: 'fade';
+$animationSpeed = $block->getData('flip_animation_speed') ?: 300;
+$imageWidth = $block->getWidth();
+$imageHeight = $block->getHeight();
+$imageLabel = $block->getLabel();
+$productId = $block->getData('product_id');
+
+$wrapperClass = 'product-image-container';
+if ($hasFlipImage) {
+    $wrapperClass .= ' has-flip-image flip-animation-' . $escaper->escapeHtmlAttr($animationType);
+}
+?>
+<span class="<?= $escaper->escapeHtmlAttr($wrapperClass) ?>"
+      style="width: <?= /* @noEscape */ $imageWidth ?>px;"
+      <?php if ($hasFlipImage): ?>
+      data-flip-image="true"
+      data-flip-url="<?= $escaper->escapeUrl($flipImageUrl) ?>"
+      data-animation-type="<?= $escaper->escapeHtmlAttr($animationType) ?>"
+      data-animation-speed="<?= $escaper->escapeHtmlAttr((string)$animationSpeed) ?>"
+      <?php endif; ?>>
+    <span class="product-image-wrapper"
+          style="padding-bottom: <?= /* @noEscape */ ($imageHeight / $imageWidth) * 100 ?>%;">
+        <?php if ($hasFlipImage): ?>
+            <span class="flip-image-container">
+                <!-- Primary Image -->
+                <img class="product-image-photo primary-image"
+                     src="<?= $escaper->escapeUrl($imageUrl) ?>"
+                     loading="lazy"
+                     width="<?= /* @noEscape */ $imageWidth ?>"
+                     height="<?= /* @noEscape */ $imageHeight ?>"
+                     alt="<?= $escaper->escapeHtmlAttr($imageLabel) ?>"/>
+                <!-- Flip Image (shown on hover) -->
+                <img class="product-image-photo flip-image"
+                     data-src="<?= $escaper->escapeUrl($flipImageUrl) ?>"
+                     loading="lazy"
+                     width="<?= /* @noEscape */ $imageWidth ?>"
+                     height="<?= /* @noEscape */ $imageHeight ?>"
+                     alt="<?= $escaper->escapeHtmlAttr($imageLabel) ?> - <?= $escaper->escapeHtml(__('Alternate View')) ?>"/>
+            </span>
+        <?php else: ?>
+            <img class="product-image-photo"
+                 src="<?= $escaper->escapeUrl($imageUrl) ?>"
+                 loading="lazy"
+                 width="<?= /* @noEscape */ $imageWidth ?>"
+                 height="<?= /* @noEscape */ $imageHeight ?>"
+                 alt="<?= $escaper->escapeHtmlAttr($imageLabel) ?>"/>
+        <?php endif; ?>
+    </span>
+</span>

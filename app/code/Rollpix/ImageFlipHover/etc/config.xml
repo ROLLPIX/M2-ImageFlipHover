@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @author Rollpix
+ * @package Rollpix_ImageFlipHover
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <rollpix_imageflip>
+            <general>
+                <enabled>1</enabled>
+                <primary_role>second_image</primary_role>
+                <fallback_role>small_image</fallback_role>
+                <animation_type>fade</animation_type>
+                <animation_speed>300</animation_speed>
+            </general>
+            <locations>
+                <category_page>1</category_page>
+                <widget_products>1</widget_products>
+                <search_results>1</search_results>
+                <related_products>1</related_products>
+                <cms_blocks>1</cms_blocks>
+                <page_builder>1</page_builder>
+            </locations>
+        </rollpix_imageflip>
+    </default>
+</config>
