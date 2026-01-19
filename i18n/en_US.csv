@@ -31,6 +31,8 @@
 "Bloques CMS","CMS Blocks"
 "Habilitar para widgets de productos insertados en bloques y páginas CMS.","Enable for product widgets embedded in CMS blocks and pages."
 "Habilitar para el widget de Productos de Page Builder y otros contenidos de Page Builder.","Enable for Page Builder Products widget and other Page Builder content."
+"Solo Desktop","Desktop Only"
+"Si se habilita, el efecto de cambio de imagen solo funcionará en dispositivos de escritorio (pantallas mayores a 768px).","If enabled, the image flip effect will only work on desktop devices (screens larger than 768px)."
 "Rollpix Cambio de Imagen al Hover","Rollpix Image Flip Hover"
 "Configuración de Cambio de Imagen al Hover","Image Flip Hover Configuration"
 "Sí","Yes"

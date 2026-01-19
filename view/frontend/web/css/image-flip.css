@@ -239,11 +239,17 @@
 }
 
 /* ======================
-   Touch device support
+   Mobile/Touch device support
    ====================== */
-@media (hover: none) {
-    .product-image-container.has-flip-image .flip-image {
-        display: none;
+@media (hover: none), (max-width: 767px) {
+    .product-image-container.has-flip-image.desktop-only .flip-image {
+        display: none !important;
+    }
+
+    .product-image-container.has-flip-image.desktop-only.is-flipped .primary-image {
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
     }
 }
 

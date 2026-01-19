@@ -18,12 +18,38 @@ define([
 
         var animationSpeed = config.animationSpeed || 300;
         var animationType = config.animationType || 'fade';
+        var desktopOnly = config.desktopOnly || false;
         var initTimeout = null;
+        var mobileBreakpoint = 768;
+
+        /**
+         * Check if current device is desktop based on screen width
+         * @returns {boolean}
+         */
+        function isDesktop() {
+            return window.innerWidth >= mobileBreakpoint;
+        }
+
+        /**
+         * Check if flip should be enabled based on device type
+         * @returns {boolean}
+         */
+        function shouldEnableFlip() {
+            if (!desktopOnly) {
+                return true;
+            }
+            return isDesktop();
+        }
 
         /**
          * Initialize flip images
          */
         function initFlipImages() {
+            // Skip initialization if desktop only and we're on mobile
+            if (!shouldEnableFlip()) {
+                return;
+            }
+
             var $flipContainers = $('[data-flip-image="true"]:not(.flip-initialized)');
 
             if ($flipContainers.length === 0) {
@@ -37,6 +63,11 @@ define([
 
                 // Mark as initialized to prevent double binding
                 $container.addClass('flip-initialized');
+
+                // Add desktop-only class if configured
+                if (desktopOnly) {
+                    $container.addClass('desktop-only');
+                }
 
                 // Set animation speed as CSS variable
                 $container.css('--flip-animation-speed', animationSpeed + 'ms');
@@ -74,26 +105,6 @@ define([
 
             $containers.on('mouseleave.flipImage', function () {
                 $(this).removeClass('is-flipped');
-            });
-
-            // Touch device support - toggle on tap
-            $containers.on('touchstart.flipImage', function (e) {
-                var $this = $(this);
-
-                // Only handle if it's the image container being tapped
-                if ($(e.target).closest('.flip-image-container').length) {
-                    e.preventDefault();
-
-                    var $flipImage = $this.find('.flip-image');
-                    var flipUrl = $this.data('flip-url');
-
-                    // Ensure flip image is loaded
-                    if ($flipImage.length && flipUrl && !$flipImage.attr('src')) {
-                        $flipImage.attr('src', flipUrl);
-                    }
-
-                    $this.toggleClass('is-flipped');
-                }
             });
         }
 

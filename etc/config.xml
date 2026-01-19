@@ -15,6 +15,7 @@
                 <fallback_role>small_image</fallback_role>
                 <animation_type>fade</animation_type>
                 <animation_speed>300</animation_speed>
+                <desktop_only>1</desktop_only>
             </general>
             <locations>
                 <category_page>1</category_page>

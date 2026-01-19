@@ -18,6 +18,7 @@ class Config extends AbstractHelper
     private const XML_PATH_FALLBACK_ROLE = 'rollpix_imageflip/general/fallback_role';
     private const XML_PATH_ANIMATION_TYPE = 'rollpix_imageflip/general/animation_type';
     private const XML_PATH_ANIMATION_SPEED = 'rollpix_imageflip/general/animation_speed';
+    private const XML_PATH_DESKTOP_ONLY = 'rollpix_imageflip/general/desktop_only';
     private const XML_PATH_CATEGORY_PAGE = 'rollpix_imageflip/locations/category_page';
     private const XML_PATH_WIDGET_PRODUCTS = 'rollpix_imageflip/locations/widget_products';
     private const XML_PATH_SEARCH_RESULTS = 'rollpix_imageflip/locations/search_results';
@@ -99,6 +100,21 @@ class Config extends AbstractHelper
             $storeId
         );
         return $speed > 0 ? $speed : 300;
+    }
+
+    /**
+     * Check if desktop only mode is enabled
+     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isDesktopOnly(?int $storeId = null): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_DESKTOP_ONLY,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
 
     /**
@@ -205,6 +221,7 @@ class Config extends AbstractHelper
             'fallbackRole' => $this->getFallbackRole($storeId),
             'animationType' => $this->getAnimationType($storeId),
             'animationSpeed' => $this->getAnimationSpeed($storeId),
+            'desktopOnly' => $this->isDesktopOnly($storeId),
             'locations' => [
                 'categoryPage' => $this->isEnabledForCategoryPage($storeId),
                 'widgetProducts' => $this->isEnabledForWidgetProducts($storeId),

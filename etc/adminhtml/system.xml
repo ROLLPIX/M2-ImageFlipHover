@@ -55,6 +55,14 @@
                         <field id="enabled">1</field>
                     </depends>
                 </field>
+                <field id="desktop_only" translate="label comment" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Solo Desktop</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Si se habilita, el efecto de cambio de imagen solo funcionará en dispositivos de escritorio (pantallas mayores a 768px).</comment>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
             </group>
             <group id="locations" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Ubicaciones Habilitadas</label>

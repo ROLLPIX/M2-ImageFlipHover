@@ -2,7 +2,7 @@
     "name": "rollpix/module-image-flip-hover",
     "description": "Magento 2 module to display an alternate product image on hover in category pages, widgets, sliders, CMS blocks, and Page Builder. Supports custom image roles, second gallery image option, and multiple animation types.",
     "type": "magento2-module",
-    "version": "1.1.1",
+    "version": "1.2.0",
     "license": "MIT",
     "keywords": [
         "magento2",
