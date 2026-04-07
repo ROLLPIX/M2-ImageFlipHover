@@ -58,7 +58,7 @@ Navigate to **Stores > Configuration > General > Image Flip on Hover**
 |---------|-------------|---------|
 | Enable Image Flip on Hover | Enable or disable the module globally | Yes |
 | Primary Image Role | The image role to display on hover (includes "Second Gallery Image" option) | Second Gallery Image |
-| Fallback Image Role | Used when product doesn't have the primary role image | Small Image |
+| Fallback Image Role | Used when product doesn't have the primary role image | Second Gallery Image |
 | Animation Type | Type of transition animation | Fade |
 | Animation Speed (ms) | Duration of the animation in milliseconds | 300 |
 
