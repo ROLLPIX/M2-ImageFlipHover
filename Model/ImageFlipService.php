@@ -88,6 +88,11 @@ class ImageFlipService
             $imageUrl = $this->getImageByRoleOrSecond($product, $fallbackRole, $imageId);
         }
 
+        // For configurable products: try child simple products if parent has no flip image
+        if (!$imageUrl && $product->getTypeId() === 'configurable') {
+            $imageUrl = $this->getFlipImageFromChildren($product, $imageId);
+        }
+
         return $imageUrl;
     }
 
@@ -255,6 +260,17 @@ class ImageFlipService
             return null;
         }
 
+        return $this->getSecondGalleryImageByProductId((int) $productId);
+    }
+
+    /**
+     * Get second gallery image by product ID
+     *
+     * @param int $productId
+     * @return string|null
+     */
+    private function getSecondGalleryImageByProductId(int $productId): ?string
+    {
         $connection = $this->resourceConnection->getConnection();
         $galleryTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery');
         $galleryValueTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value');
@@ -270,7 +286,7 @@ class ImageFlipService
             )
             ->joinLeft(
                 ['mgv' => $galleryValueTable],
-                'mg.value_id = mgv.value_id AND mgvte.entity_id = mgv.entity_id',
+                'mg.value_id = mgv.value_id AND mgvte.entity_id = mgv.entity_id AND mgv.store_id = 0',
                 []
             )
             ->where('mgvte.entity_id = ?', $productId)
@@ -280,6 +296,121 @@ class ImageFlipService
             ->limit(1, 1); // Skip first, get second
 
         return $connection->fetchOne($select) ?: null;
+    }
+
+    /**
+     * Get flip image from child products of a configurable product
+     *
+     * @param ProductInterface|Product $product
+     * @param string|null $imageId
+     * @return string|null
+     */
+    private function getFlipImageFromChildren($product, ?string $imageId): ?string
+    {
+        $childIds = $this->getConfigurableChildIds((int) $product->getId());
+        if (empty($childIds)) {
+            return null;
+        }
+
+        $primaryRole = $this->config->getPrimaryRole();
+        $fallbackRole = $this->config->getFallbackRole();
+
+        // Try primary role on children
+        $imageValue = $this->findChildImage($childIds, $primaryRole);
+
+        // Try fallback role on children
+        if (!$imageValue && $fallbackRole && $fallbackRole !== $primaryRole) {
+            $imageValue = $this->findChildImage($childIds, $fallbackRole);
+        }
+
+        if ($imageValue) {
+            return $this->buildImageUrl($product, $imageValue, $imageId);
+        }
+
+        return null;
+    }
+
+    /**
+     * Find an image from child products by role
+     *
+     * @param array $childIds
+     * @param string $role
+     * @return string|null
+     */
+    private function findChildImage(array $childIds, string $role): ?string
+    {
+        if (empty($role)) {
+            return null;
+        }
+
+        if ($role === 'second_image') {
+            foreach ($childIds as $childId) {
+                $image = $this->getSecondGalleryImageByProductId((int) $childId);
+                if ($image) {
+                    return $image;
+                }
+            }
+            return null;
+        }
+
+        // For regular roles, check EAV attribute values on children
+        return $this->getAttributeValueFromChildren($childIds, $role);
+    }
+
+    /**
+     * Get child product IDs for a configurable product
+     *
+     * @param int $parentId
+     * @return array
+     */
+    private function getConfigurableChildIds(int $parentId): array
+    {
+        $connection = $this->resourceConnection->getConnection();
+        $superLinkTable = $this->resourceConnection->getTableName('catalog_product_super_link');
+
+        return $connection->fetchCol(
+            $connection->select()
+                ->from($superLinkTable, ['product_id'])
+                ->where('parent_id = ?', $parentId)
+        );
+    }
+
+    /**
+     * Get image attribute value from child products
+     *
+     * @param array $childIds
+     * @param string $role
+     * @return string|null
+     */
+    private function getAttributeValueFromChildren(array $childIds, string $role): ?string
+    {
+        $connection = $this->resourceConnection->getConnection();
+
+        $eavAttributeTable = $this->resourceConnection->getTableName('eav_attribute');
+        $attributeId = $connection->fetchOne(
+            $connection->select()
+                ->from($eavAttributeTable, ['attribute_id'])
+                ->where('attribute_code = ?', $role)
+                ->where('entity_type_id = ?', 4) // catalog_product entity type
+        );
+
+        if (!$attributeId) {
+            return null;
+        }
+
+        $varcharTable = $this->resourceConnection->getTableName('catalog_product_entity_varchar');
+        $imageValue = $connection->fetchOne(
+            $connection->select()
+                ->from($varcharTable, ['value'])
+                ->where('attribute_id = ?', $attributeId)
+                ->where('entity_id IN (?)', $childIds)
+                ->where('value IS NOT NULL')
+                ->where('value != ?', 'no_selection')
+                ->where('value != ?', '')
+                ->limit(1)
+        );
+
+        return $imageValue ?: null;
     }
 
     /**
