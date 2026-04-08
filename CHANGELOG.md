@@ -2,6 +2,11 @@
 
 Todos los cambios notables de este módulo se documentan en este archivo.
 
+## [1.3.2] - 2026-04-08
+
+### Changed
+- Sección "Información del Módulo" movida al final de la página de configuración, con nombre completo, versión y link a GitHub.
+
 ## [1.3.1] - 2026-04-08
 
 ### Fixed
