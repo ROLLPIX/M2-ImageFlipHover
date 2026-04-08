@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.3] - 2026-04-08
+
+### Fixed
+- Skip flip image when it is the same file as the base image (was causing invisible flip on products where `image_on_hover` role pointed to the same photo as `image`)
+- Gallery query now uses current store ID instead of only default store, with `GROUP BY` to prevent duplicate rows in multi-store setups
+- Fix primary role bypassing placeholder detection
+- Fix ModuleInfo constructor: add missing authSession parameter
+
+### Added
+- Module info group in admin config: module name, version (from composer.json), GitHub link
+
 ## [1.2.1] - 2026-04-07
 
 ### Fixed
