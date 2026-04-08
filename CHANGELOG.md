@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.5] - 2026-04-08
+
+### Fixed
+- Gallery fallback now finds the first image different from base instead of blindly using position #2. Fixes products where the base image is not at gallery position 1 (e.g., base image at position 2 was returned as the "second image" causing an invisible flip).
+
 ## [1.3.4] - 2026-04-08
 
 ### Fixed

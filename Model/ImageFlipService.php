@@ -122,8 +122,8 @@ class ImageFlipService
 
         // Special handling for "second_image" option
         if ($role === 'second_image') {
-            $secondImage = $this->getSecondGalleryImage($product);
-            if ($secondImage && $secondImage !== $baseImage) {
+            $secondImage = $this->getAlternateGalleryImage($product, $baseImage);
+            if ($secondImage) {
                 return $this->buildImageUrl($product, $secondImage, $imageId);
             }
             return null;
@@ -282,35 +282,39 @@ class ImageFlipService
     }
 
     /**
-     * Get second image from product gallery (common fallback approach)
+     * Get the first gallery image that is different from the base image
      *
      * @param ProductInterface|Product $product
+     * @param string|null $baseImage
      * @return string|null
      */
-    private function getSecondGalleryImage($product): ?string
+    private function getAlternateGalleryImage($product, ?string $baseImage = null): ?string
     {
         $productId = $product->getId();
         if (!$productId) {
             return null;
         }
 
-        return $this->getSecondGalleryImageByProductId((int) $productId);
+        return $this->getAlternateGalleryImageByProductId((int) $productId, $baseImage);
     }
 
     /**
-     * Get second gallery image by product ID
+     * Get the first gallery image by position that is not the base image
      *
      * @param int $productId
+     * @param string|null $baseImage Image path to exclude
      * @return string|null
      */
-    private function getSecondGalleryImageByProductId(int $productId): ?string
+    private function getAlternateGalleryImageByProductId(int $productId, ?string $baseImage = null): ?string
     {
         $connection = $this->resourceConnection->getConnection();
         $galleryTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery');
         $galleryValueTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value');
         $galleryEntityTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value_to_entity');
 
-        // Get the second image from the gallery ordered by position
+        $storeId = (int) $this->storeManager->getStore()->getId();
+
+        // Get the first gallery image that is not the base image, ordered by position
         $select = $connection->select()
             ->from(['mg' => $galleryTable], ['value'])
             ->join(
@@ -321,15 +325,21 @@ class ImageFlipService
             ->joinLeft(
                 ['mgv' => $galleryValueTable],
                 'mg.value_id = mgv.value_id AND mgvte.entity_id = mgv.entity_id'
-                . ' AND mgv.store_id IN (0, ' . (int) $this->storeManager->getStore()->getId() . ')',
+                . ' AND mgv.store_id IN (0, ' . $storeId . ')',
                 []
             )
             ->where('mgvte.entity_id = ?', $productId)
             ->where('mg.media_type = ?', 'image')
             ->where('COALESCE(mgv.disabled, 0) = 0')
             ->group('mg.value_id')
-            ->order('MIN(COALESCE(mgv.position, 999)) ASC')
-            ->limit(1, 1); // Skip first, get second
+            ->order('MIN(COALESCE(mgv.position, 999)) ASC');
+
+        // Exclude the base image so we always get a different one
+        if ($baseImage) {
+            $select->where('mg.value != ?', $baseImage);
+        }
+
+        $select->limit(1);
 
         return $connection->fetchOne($select) ?: null;
     }
@@ -381,7 +391,7 @@ class ImageFlipService
 
         if ($role === 'second_image') {
             foreach ($childIds as $childId) {
-                $image = $this->getSecondGalleryImageByProductId((int) $childId);
+                $image = $this->getAlternateGalleryImageByProductId((int) $childId);
                 if ($image) {
                     return $image;
                 }
