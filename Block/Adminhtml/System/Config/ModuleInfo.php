@@ -10,8 +10,6 @@ namespace Rollpix\ImageFlipHover\Block\Adminhtml\System\Config;
 use Magento\Config\Block\System\Config\Form\Fieldset;
 use Magento\Framework\Data\Form\Element\AbstractElement;
 use Magento\Framework\Module\PackageInfoFactory;
-use Magento\Backend\Block\Template\Context;
-use Magento\Backend\Block\Context as BackendContext;
 
 class ModuleInfo extends Fieldset
 {
@@ -26,17 +24,19 @@ class ModuleInfo extends Fieldset
 
     /**
      * @param \Magento\Backend\Block\Context $context
+     * @param \Magento\Backend\Model\Auth\Session $authSession
      * @param \Magento\Framework\View\Helper\Js $jsHelper
      * @param PackageInfoFactory $packageInfoFactory
      * @param array $data
      */
     public function __construct(
         \Magento\Backend\Block\Context $context,
+        \Magento\Backend\Model\Auth\Session $authSession,
         \Magento\Framework\View\Helper\Js $jsHelper,
         PackageInfoFactory $packageInfoFactory,
         array $data = []
     ) {
-        parent::__construct($context, $jsHelper, $data);
+        parent::__construct($context, $authSession, $jsHelper, $data);
         $this->packageInfoFactory = $packageInfoFactory;
     }
 
