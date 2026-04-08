@@ -89,12 +89,24 @@ class ImageFlipService
         $primaryRole = $this->config->getPrimaryRole();
         $fallbackRole = $this->config->getFallbackRole();
 
+        // Get the product's current base image to avoid returning the same image as flip
+        $baseImage = $product->getData('image');
+        $baseImageUrl = null;
+        if ($baseImage && $baseImage !== 'no_selection') {
+            $baseImageUrl = $this->buildImageUrl($product, $baseImage, $imageId);
+        }
+
         // Try primary role first
         $imageUrl = $this->getImageByRoleOrSecond($product, $primaryRole, $imageId);
 
         // If no primary image found, try fallback role
         if (!$imageUrl && $fallbackRole && $fallbackRole !== $primaryRole) {
             $imageUrl = $this->getImageByRoleOrSecond($product, $fallbackRole, $imageId);
+        }
+
+        // Don't return flip image if it's the same as the base image
+        if ($imageUrl && $baseImageUrl && $imageUrl === $baseImageUrl) {
+            return null;
         }
 
         return $imageUrl;
@@ -141,7 +153,14 @@ class ImageFlipService
             $this->imageHelper->init($product, $imageId ?: 'category_page_list')
                 ->setImageFile($imageValue);
 
-            return $this->imageHelper->getUrl();
+            $url = $this->imageHelper->getUrl();
+
+            // If imageHelper returned the placeholder, treat as no image found
+            if ($url && strpos($url, '/placeholder/') !== false) {
+                return null;
+            }
+
+            return $url;
         } catch (\Exception $e) {
             return $this->mediaConfig->getMediaUrl($imageValue);
         }
@@ -275,8 +294,10 @@ class ImageFlipService
         $galleryEntityTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value_to_entity');
 
         // Get the second image from the gallery ordered by position.
-        // Join gallery_value twice (store-specific + default) to avoid duplicate rows
-        // from multiple store_id entries, which would break the LIMIT/OFFSET.
+        // Join gallery_value twice (store-specific + default) to:
+        // 1. Filter by entity_id to avoid matching child product overrides
+        // 2. Filter by store_id to avoid duplicate rows that break LIMIT/OFFSET
+        // 3. Use COALESCE to prefer store-specific position/disabled over default
         $select = $connection->select()
             ->from(['mg' => $galleryTable], ['value'])
             ->join(
@@ -286,12 +307,16 @@ class ImageFlipService
             )
             ->joinLeft(
                 ['mgv_store' => $galleryValueTable],
-                'mg.value_id = mgv_store.value_id AND mgv_store.store_id = ' . $storeId,
+                'mg.value_id = mgv_store.value_id'
+                . ' AND mgv_store.entity_id = ' . (int) $productId
+                . ' AND mgv_store.store_id = ' . $storeId,
                 []
             )
             ->joinLeft(
                 ['mgv_default' => $galleryValueTable],
-                'mg.value_id = mgv_default.value_id AND mgv_default.store_id = 0',
+                'mg.value_id = mgv_default.value_id'
+                . ' AND mgv_default.entity_id = ' . (int) $productId
+                . ' AND mgv_default.store_id = 0',
                 []
             )
             ->where('mgvte.entity_id = ?', $productId)
