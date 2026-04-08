@@ -10,14 +10,12 @@ This is a Magento 2 module called **Rollpix_ImageFlipHover** that provides produ
 
 ```
 M2-ImageFlipHover/
-├── Block/Adminhtml/System/Config/
-│   └── ModuleVersion.php         # Version display in admin config
 ├── etc/                          # Configuration files
 │   ├── module.xml                # Module declaration
 │   ├── di.xml                    # Dependency injection (plugins)
 │   ├── config.xml                # Default config values
 │   ├── acl.xml                   # Admin ACL
-│   └── adminhtml/system.xml      # Admin config fields (info + general + locations)
+│   └── adminhtml/system.xml      # Admin config fields
 ├── Helper/Config.php             # Config helper
 ├── Model/
 │   ├── ImageFlipService.php      # Core flip image service
@@ -40,15 +38,9 @@ M2-ImageFlipHover/
 │   ├── en_US.csv
 │   ├── es_ES.csv
 │   └── es_AR.csv
-├── docs/                         # Project documentation
-│   ├── SELF-REVIEW.md
-│   ├── TASKS.md
-│   └── ACCEPTANCE.md
 ├── composer.json                 # Composer package definition
 ├── registration.php              # Module registration
-├── README.md                     # Documentation (EN)
-├── manual.md                     # User manual (ES)
-├── CHANGELOG.md                  # Version history
+├── README.md                     # Documentation
 └── CLAUDE.md                     # This file
 ```
 
@@ -80,13 +72,10 @@ The module uses three plugins to intercept image rendering:
 
 ```
 1. Try primary role (from config)
-   └── If role = 'second_image' → Query gallery for 2nd image by position (filtered by store_id=0)
+   └── If role = 'second_image' → Query gallery for 2nd image by position
    └── Else → Query EAV varchar table for attribute value
 2. If no image found, try fallback role (same logic)
-3. For configurable products: if parent has no flip image, try child simple products
-   └── Query catalog_product_super_link for child IDs
-   └── Try primary role on children, then fallback role
-4. Return resized image URL via ImageHelper
+3. Return resized image URL via ImageHelper
 ```
 
 ### Database Tables Used
@@ -94,9 +83,8 @@ The module uses three plugins to intercept image rendering:
 - `eav_attribute` - Get attribute ID by code
 - `catalog_product_entity_varchar` - Get image value for custom roles
 - `catalog_product_entity_media_gallery` - Gallery images
-- `catalog_product_entity_media_gallery_value` - Gallery position/disabled (filtered by store_id=0)
+- `catalog_product_entity_media_gallery_value` - Gallery position/disabled
 - `catalog_product_entity_media_gallery_value_to_entity` - Gallery-product link
-- `catalog_product_super_link` - Configurable product child IDs
 
 ### Config Paths
 
@@ -106,7 +94,6 @@ All config stored under `rollpix_imageflip/`:
 - `general/fallback_role`
 - `general/animation_type`
 - `general/animation_speed`
-- `general/desktop_only`
 - `locations/category_page`
 - `locations/widget_products`
 - `locations/search_results`
@@ -193,4 +180,4 @@ Translation files available: en_US, es_ES, es_AR (with voseo).
 
 ## Version
 
-Current version: 1.2.1
+Current version: 1.1.0

@@ -16,25 +16,6 @@
             <label>Image Flip Hover</label>
             <tab>rollpix</tab>
             <resource>Rollpix_ImageFlipHover::config</resource>
-            <group id="info" translate="label" sortOrder="0" showInDefault="1" showInWebsite="0" showInStore="0">
-                <label>Información del módulo</label>
-                <field id="module_name" translate="label" type="label" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Módulo</label>
-                    <comment>Rollpix_ImageFlipHover</comment>
-                </field>
-                <field id="module_version" translate="label" type="label" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Versión</label>
-                    <frontend_model>Rollpix\ImageFlipHover\Block\Adminhtml\System\Config\ModuleVersion</frontend_model>
-                </field>
-                <field id="module_repo" translate="label" type="label" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Repositorio</label>
-                    <comment><![CDATA[<a href="https://github.com/ROLLPIX/M2-ImageFlipHover" target="_blank">GitHub</a>]]></comment>
-                </field>
-                <field id="module_manual" translate="label" type="label" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Manual de usuario</label>
-                    <comment><![CDATA[<a href="https://github.com/ROLLPIX/M2-ImageFlipHover/blob/master/manual.md" target="_blank">Ver manual</a>]]></comment>
-                </field>
-            </group>
             <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Configuración General</label>
                 <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">

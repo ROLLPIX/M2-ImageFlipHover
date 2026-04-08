@@ -102,12 +102,11 @@ class ImagePlugin
 
             // Create flip image
             $flipImg = sprintf(
-                '<img class="product-image-photo flip-image" data-src="%s" loading="lazy" width="%s" height="%s" alt="%s - %s"/>',
+                '<img class="product-image-photo flip-image" data-src="%s" loading="lazy" width="%s" height="%s" alt="%s - Alternate View"/>',
                 htmlspecialchars($flipImageUrl),
                 htmlspecialchars($width),
                 htmlspecialchars($height),
-                htmlspecialchars($alt),
-                htmlspecialchars((string) __('Alternate View'))
+                htmlspecialchars($alt)
             );
 
             // Wrap both images in flip container

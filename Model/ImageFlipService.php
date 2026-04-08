@@ -15,6 +15,7 @@ use Magento\Catalog\Model\Product\Media\Config as MediaConfig;
 use Magento\Catalog\Model\ResourceModel\Product\Gallery;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\View\Asset\Repository as AssetRepository;
+use Magento\Store\Model\StoreManagerInterface;
 
 class ImageFlipService
 {
@@ -44,24 +45,32 @@ class ImageFlipService
     private ResourceConnection $resourceConnection;
 
     /**
+     * @var StoreManagerInterface
+     */
+    private StoreManagerInterface $storeManager;
+
+    /**
      * @param Config $config
      * @param ImageHelper $imageHelper
      * @param MediaConfig $mediaConfig
      * @param AssetRepository $assetRepository
      * @param ResourceConnection $resourceConnection
+     * @param StoreManagerInterface $storeManager
      */
     public function __construct(
         Config $config,
         ImageHelper $imageHelper,
         MediaConfig $mediaConfig,
         AssetRepository $assetRepository,
-        ResourceConnection $resourceConnection
+        ResourceConnection $resourceConnection,
+        StoreManagerInterface $storeManager
     ) {
         $this->config = $config;
         $this->imageHelper = $imageHelper;
         $this->mediaConfig = $mediaConfig;
         $this->assetRepository = $assetRepository;
         $this->resourceConnection = $resourceConnection;
+        $this->storeManager = $storeManager;
     }
 
     /**
@@ -86,11 +95,6 @@ class ImageFlipService
         // If no primary image found, try fallback role
         if (!$imageUrl && $fallbackRole && $fallbackRole !== $primaryRole) {
             $imageUrl = $this->getImageByRoleOrSecond($product, $fallbackRole, $imageId);
-        }
-
-        // For configurable products: try child simple products if parent has no flip image
-        if (!$imageUrl && $product->getTypeId() === 'configurable') {
-            $imageUrl = $this->getFlipImageFromChildren($product, $imageId);
         }
 
         return $imageUrl;
@@ -210,16 +214,20 @@ class ImageFlipService
         );
 
         if ($attributeId) {
-            // Check varchar table for the image value
+            // Check varchar table for the image value, preferring store-specific over default
+            $storeId = (int) $this->storeManager->getStore()->getId();
             $varcharTable = $this->resourceConnection->getTableName('catalog_product_entity_varchar');
             $imageValue = $connection->fetchOne(
                 $connection->select()
                     ->from($varcharTable, ['value'])
                     ->where('attribute_id = ?', $attributeId)
                     ->where('entity_id = ?', $productId)
+                    ->where('store_id IN (?)', [0, $storeId])
                     ->where('value IS NOT NULL')
                     ->where('value != ?', 'no_selection')
                     ->where('value != ?', '')
+                    ->order('store_id DESC')
+                    ->limit(1)
             );
 
             if ($imageValue) {
@@ -260,23 +268,15 @@ class ImageFlipService
             return null;
         }
 
-        return $this->getSecondGalleryImageByProductId((int) $productId);
-    }
-
-    /**
-     * Get second gallery image by product ID
-     *
-     * @param int $productId
-     * @return string|null
-     */
-    private function getSecondGalleryImageByProductId(int $productId): ?string
-    {
+        $storeId = (int) $this->storeManager->getStore()->getId();
         $connection = $this->resourceConnection->getConnection();
         $galleryTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery');
         $galleryValueTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value');
         $galleryEntityTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value_to_entity');
 
-        // Get the second image from the gallery ordered by position
+        // Get the second image from the gallery ordered by position.
+        // Join gallery_value twice (store-specific + default) to avoid duplicate rows
+        // from multiple store_id entries, which would break the LIMIT/OFFSET.
         $select = $connection->select()
             ->from(['mg' => $galleryTable], ['value'])
             ->join(
@@ -285,132 +285,22 @@ class ImageFlipService
                 []
             )
             ->joinLeft(
-                ['mgv' => $galleryValueTable],
-                'mg.value_id = mgv.value_id AND mgvte.entity_id = mgv.entity_id AND mgv.store_id = 0',
+                ['mgv_store' => $galleryValueTable],
+                'mg.value_id = mgv_store.value_id AND mgv_store.store_id = ' . $storeId,
+                []
+            )
+            ->joinLeft(
+                ['mgv_default' => $galleryValueTable],
+                'mg.value_id = mgv_default.value_id AND mgv_default.store_id = 0',
                 []
             )
             ->where('mgvte.entity_id = ?', $productId)
             ->where('mg.media_type = ?', 'image')
-            ->where('COALESCE(mgv.disabled, 0) = 0')
-            ->order('COALESCE(mgv.position, 999) ASC')
+            ->where('COALESCE(mgv_store.disabled, mgv_default.disabled, 0) = 0')
+            ->order('COALESCE(mgv_store.position, mgv_default.position, 999) ASC')
             ->limit(1, 1); // Skip first, get second
 
         return $connection->fetchOne($select) ?: null;
-    }
-
-    /**
-     * Get flip image from child products of a configurable product
-     *
-     * @param ProductInterface|Product $product
-     * @param string|null $imageId
-     * @return string|null
-     */
-    private function getFlipImageFromChildren($product, ?string $imageId): ?string
-    {
-        $childIds = $this->getConfigurableChildIds((int) $product->getId());
-        if (empty($childIds)) {
-            return null;
-        }
-
-        $primaryRole = $this->config->getPrimaryRole();
-        $fallbackRole = $this->config->getFallbackRole();
-
-        // Try primary role on children
-        $imageValue = $this->findChildImage($childIds, $primaryRole);
-
-        // Try fallback role on children
-        if (!$imageValue && $fallbackRole && $fallbackRole !== $primaryRole) {
-            $imageValue = $this->findChildImage($childIds, $fallbackRole);
-        }
-
-        if ($imageValue) {
-            return $this->buildImageUrl($product, $imageValue, $imageId);
-        }
-
-        return null;
-    }
-
-    /**
-     * Find an image from child products by role
-     *
-     * @param array $childIds
-     * @param string $role
-     * @return string|null
-     */
-    private function findChildImage(array $childIds, string $role): ?string
-    {
-        if (empty($role)) {
-            return null;
-        }
-
-        if ($role === 'second_image') {
-            foreach ($childIds as $childId) {
-                $image = $this->getSecondGalleryImageByProductId((int) $childId);
-                if ($image) {
-                    return $image;
-                }
-            }
-            return null;
-        }
-
-        // For regular roles, check EAV attribute values on children
-        return $this->getAttributeValueFromChildren($childIds, $role);
-    }
-
-    /**
-     * Get child product IDs for a configurable product
-     *
-     * @param int $parentId
-     * @return array
-     */
-    private function getConfigurableChildIds(int $parentId): array
-    {
-        $connection = $this->resourceConnection->getConnection();
-        $superLinkTable = $this->resourceConnection->getTableName('catalog_product_super_link');
-
-        return $connection->fetchCol(
-            $connection->select()
-                ->from($superLinkTable, ['product_id'])
-                ->where('parent_id = ?', $parentId)
-        );
-    }
-
-    /**
-     * Get image attribute value from child products
-     *
-     * @param array $childIds
-     * @param string $role
-     * @return string|null
-     */
-    private function getAttributeValueFromChildren(array $childIds, string $role): ?string
-    {
-        $connection = $this->resourceConnection->getConnection();
-
-        $eavAttributeTable = $this->resourceConnection->getTableName('eav_attribute');
-        $attributeId = $connection->fetchOne(
-            $connection->select()
-                ->from($eavAttributeTable, ['attribute_id'])
-                ->where('attribute_code = ?', $role)
-                ->where('entity_type_id = ?', 4) // catalog_product entity type
-        );
-
-        if (!$attributeId) {
-            return null;
-        }
-
-        $varcharTable = $this->resourceConnection->getTableName('catalog_product_entity_varchar');
-        $imageValue = $connection->fetchOne(
-            $connection->select()
-                ->from($varcharTable, ['value'])
-                ->where('attribute_id = ?', $attributeId)
-                ->where('entity_id IN (?)', $childIds)
-                ->where('value IS NOT NULL')
-                ->where('value != ?', 'no_selection')
-                ->where('value != ?', '')
-                ->limit(1)
-        );
-
-        return $imageValue ?: null;
     }
 
     /**
