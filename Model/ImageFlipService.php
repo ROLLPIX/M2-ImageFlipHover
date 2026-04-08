@@ -185,6 +185,11 @@ class ImageFlipService
             return null;
         }
 
+        // Skip invalid image values (.tmp files, missing extensions, etc.)
+        if (!$this->isValidImageValue($imageValue)) {
+            return null;
+        }
+
         // Generate resized image URL using image helper
         try {
             $this->imageHelper->init($product, $imageId ?: 'category_page_list')
@@ -195,6 +200,20 @@ class ImageFlipService
             // If image helper fails, return direct URL
             return $this->mediaConfig->getMediaUrl($imageValue);
         }
+    }
+
+    /**
+     * Check if an image value is a valid image file path
+     *
+     * @param string $imageValue
+     * @return bool
+     */
+    private function isValidImageValue(string $imageValue): bool
+    {
+        $validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+        $extension = strtolower(pathinfo($imageValue, PATHINFO_EXTENSION));
+
+        return in_array($extension, $validExtensions, true);
     }
 
     /**
