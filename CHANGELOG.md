@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.4] - 2026-04-08
+
+### Fixed
+- Skip invalid image values (`.tmp`, etc.) in flip image resolution. Products synced from external systems may have garbage file extensions in image role attributes, which prevented the fallback to second gallery image from triggering.
+
 ## [1.3.3] - 2026-04-08
 
 ### Fixed
