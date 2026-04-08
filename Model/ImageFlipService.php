@@ -193,16 +193,7 @@ class ImageFlipService
             return null;
         }
 
-        // Generate resized image URL using image helper
-        try {
-            $this->imageHelper->init($product, $imageId ?: 'category_page_list')
-                ->setImageFile($imageValue);
-
-            return $this->imageHelper->getUrl();
-        } catch (\Exception $e) {
-            // If image helper fails, return direct URL
-            return $this->mediaConfig->getMediaUrl($imageValue);
-        }
+        return $this->buildImageUrl($product, $imageValue, $imageId);
     }
 
     /**

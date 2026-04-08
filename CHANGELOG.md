@@ -2,6 +2,11 @@
 
 Todos los cambios notables de este módulo se documentan en este archivo.
 
+## [1.3.1] - 2026-04-08
+
+### Fixed
+- Fix rol primario con valor residual: si el atributo `image_on_hover` tiene un valor viejo que apunta a un archivo inexistente, `getImageUrlByRole()` ahora usa `buildImageUrl()` con detección de placeholder, permitiendo que el fallback `second_image` entre en juego.
+
 ## [1.3.0] - 2026-04-08
 
 ### Fixed
