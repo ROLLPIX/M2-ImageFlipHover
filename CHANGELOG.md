@@ -1,55 +1,44 @@
 # Changelog
 
-Todos los cambios notables de este módulo se documentan en este archivo.
+All notable changes to this project will be documented in this file.
 
-## [1.3.2] - 2026-04-08
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Changed
-- Sección "Información del Módulo" movida al final de la página de configuración, con nombre completo, versión y link a GitHub.
+## [Unreleased]
 
-## [1.3.1] - 2026-04-08
-
-### Fixed
-- Fix rol primario con valor residual: si el atributo `image_on_hover` tiene un valor viejo que apunta a un archivo inexistente, `getImageUrlByRole()` ahora usa `buildImageUrl()` con detección de placeholder, permitiendo que el fallback `second_image` entre en juego.
-
-## [1.3.0] - 2026-04-08
+## [1.2.1] - 2026-04-07
 
 ### Fixed
-- Fix query de galería para setups multi-tienda: filtrar por `entity_id` y `store_id` en los JOINs a `catalog_product_entity_media_gallery_value` para evitar filas duplicadas que rompían el `LIMIT/OFFSET` de la segunda imagen.
-- Fix para tiendas que cargan imágenes solo a nivel store scope (no default): doble LEFT JOIN (store-specific + default) con `COALESCE` para posición y disabled.
-- Fix detección de placeholder: si `imageHelper` devuelve una URL de placeholder, retornar null en vez de usarla como flip image.
-- Fix duplicado con imagen base: no mostrar flip image si es la misma URL que la imagen principal del producto.
-- Fix query varchar en `getImageFromGalleryByRole()`: agregar filtro `store_id` y preferir valor store-specific sobre default.
+- Fix flip image fallback not working for configurable products: gallery query missing `store_id` filter caused duplicate rows per store view, corrupting the `OFFSET` and returning the base image instead of the actual second gallery image
+- Change default `fallback_role` from `small_image` to `second_image` for better out-of-the-box behavior
 
 ### Added
-- Bloque de información del módulo en admin con versión (Stores > Configuration > ROLLPIX > Image Flip Hover).
+- Configurable product child fallback: when the parent configurable has no flip image, the module now tries child simple products as last resort
 
-## [1.2.1] - 2025-12-15
+## [1.2.0] - 2025-12-20
+
+### Added
+- Desktop-only mode: new config option to restrict flip effect to screens wider than 768px
 
 ### Fixed
-- Fix flip image fallback for configurable products.
+- Mobile click/tap issue when desktop-only mode is disabled
 
-## [1.2.0] - 2025-12-01
-
-### Added
-- Desktop-only option and fix mobile click issue.
-
-## [1.1.1] - 2025-11-15
+## [1.1.1] - 2025-12-15
 
 ### Fixed
-- Keep module name untranslated in admin menu.
+- Keep module name untranslated in admin menu
+- Fix admin menu: move config under ROLLPIX tab
 
-## [1.1.0] - 2025-11-01
-
-### Added
-- Initial multi-store support.
-- Multiple animation types.
-- Location-specific enable/disable.
-
-## [1.0.0] - 2025-10-01
+## [1.1.0] - 2025-12-01
 
 ### Added
-- Initial release.
-- Product image flip on hover for category pages.
-- Support for custom image roles and second gallery image.
-- Page Builder, CMS blocks, and widget support.
+- Initial release
+- Product image flip on hover for category pages, widgets, search results, related products, CMS blocks, and Page Builder
+- Multiple animation types: fade, slide (left/right/up/down), zoom, flip (horizontal/vertical)
+- Configurable primary and fallback image roles
+- "Second Gallery Image" option for automatic flip image selection
+- Custom `media_image` attribute auto-detection
+- Dynamic content support: AJAX, sliders (Slick, Owl Carousel, Swiper), Amasty Infinite Scroll
+- Admin configuration per store view
+- Translation files: en_US, es_ES, es_AR (voseo)
