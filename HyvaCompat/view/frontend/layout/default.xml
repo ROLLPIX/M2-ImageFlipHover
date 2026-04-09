@@ -2,20 +2,23 @@
 <!--
 /**
  * @author Rollpix
- * @package Rollpix_ImageFlipHover
+ * @package Rollpix_ImageFlipHoverHyvaCompat
+ *
+ * Replaces Luma JS (RequireJS/jQuery) with vanilla JS for Hyvä compatibility.
+ * CSS files from the main module are inherited via theme fallback.
  */
 -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
-    <head>
-        <css src="Rollpix_ImageFlipHover::css/image-flip.css"/>
-        <css src="Rollpix_ImageFlipHover::css/hover-slider.css"/>
-    </head>
     <body>
+        <!-- Remove the Luma x-magento-init JS block -->
+        <referenceBlock name="rollpix.imageflip.js" remove="true"/>
+
+        <!-- Add Hyvä-compatible vanilla JS block -->
         <referenceContainer name="before.body.end">
             <block class="Magento\Framework\View\Element\Template"
-                   name="rollpix.imageflip.js"
-                   template="Rollpix_ImageFlipHover::js/init.phtml">
+                   name="rollpix.imageflip.hyva.js"
+                   template="Rollpix_ImageFlipHoverHyvaCompat::js/init-hyva.phtml">
                 <arguments>
                     <argument name="view_model" xsi:type="object">Rollpix\ImageFlipHover\ViewModel\ImageFlip</argument>
                 </arguments>

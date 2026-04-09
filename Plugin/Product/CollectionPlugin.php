@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Rollpix\ImageFlipHover\Plugin\Product;
 
 use Rollpix\ImageFlipHover\Helper\Config;
+use Rollpix\ImageFlipHover\Model\ImageFlipService;
 use Magento\Catalog\Model\ResourceModel\Product\Collection;
 
 class CollectionPlugin
@@ -18,11 +19,23 @@ class CollectionPlugin
     private Config $config;
 
     /**
-     * @param Config $config
+     * @var ImageFlipService
      */
-    public function __construct(Config $config)
+    private ImageFlipService $imageFlipService;
+
+    /**
+     * @var bool Guard against re-entrant calls
+     */
+    private bool $isPreloading = false;
+
+    /**
+     * @param Config $config
+     * @param ImageFlipService $imageFlipService
+     */
+    public function __construct(Config $config, ImageFlipService $imageFlipService)
     {
         $this->config = $config;
+        $this->imageFlipService = $imageFlipService;
     }
 
     /**
@@ -65,6 +78,44 @@ class CollectionPlugin
         }
 
         return [$printQuery, $logQuery];
+    }
+
+    /**
+     * After collection loads, preload gallery images for slider mode
+     *
+     * @param Collection $subject
+     * @param Collection $result
+     * @return Collection
+     */
+    public function afterLoad(Collection $subject, Collection $result): Collection
+    {
+        if ($this->isPreloading) {
+            return $result;
+        }
+
+        $this->isPreloading = true;
+        try {
+            if (!$this->config->isEnabled() || !$this->config->isSliderMode()) {
+                return $result;
+            }
+
+            // Extract IDs directly from loaded items to avoid triggering load() again
+            $productIds = [];
+            foreach ($result->getItems() as $item) {
+                $productIds[] = (int) $item->getId();
+            }
+
+            if (!empty($productIds)) {
+                $this->imageFlipService->preloadGalleryBatch(
+                    $productIds,
+                    $this->config->getMaxImages()
+                );
+            }
+        } finally {
+            $this->isPreloading = false;
+        }
+
+        return $result;
     }
 
     /**

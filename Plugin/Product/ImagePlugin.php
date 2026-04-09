@@ -38,7 +38,7 @@ class ImagePlugin
     }
 
     /**
-     * Add flip image data to the image block
+     * Add flip/slider image data to the image block
      *
      * @param ImageFactory $subject
      * @param ImageBlock $result
@@ -58,6 +58,18 @@ class ImagePlugin
             return $result;
         }
 
+        if ($this->config->isSliderMode()) {
+            return $this->attachSliderData($result, $product, $imageId);
+        }
+
+        return $this->attachFlipData($result, $product, $imageId);
+    }
+
+    /**
+     * Attach flip image data (existing behavior)
+     */
+    private function attachFlipData(ImageBlock $result, Product $product, string $imageId): ImageBlock
+    {
         $flipImageData = $this->imageFlipService->getFlipImageData($product, $imageId);
 
         if ($flipImageData['hasFlipImage']) {
@@ -65,6 +77,23 @@ class ImagePlugin
             $result->setData('flip_animation_type', $flipImageData['animationType']);
             $result->setData('flip_animation_speed', $flipImageData['animationSpeed']);
             $result->setData('has_flip_image', true);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Attach slider gallery data
+     */
+    private function attachSliderData(ImageBlock $result, Product $product, string $imageId): ImageBlock
+    {
+        $sliderData = $this->imageFlipService->getSliderImageData($product, $imageId);
+
+        if ($sliderData['hasSliderImages']) {
+            $result->setData('slider_mode', true);
+            $result->setData('gallery_urls', $sliderData['galleryUrls']);
+            $result->setData('image_count', $sliderData['imageCount']);
+            $result->setData('has_flip_image', true); // Trigger block plugin
         }
 
         return $result;

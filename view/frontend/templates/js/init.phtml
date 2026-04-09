@@ -15,11 +15,15 @@ $viewModel = $block->getData('view_model');
 if (!$viewModel->isEnabled()) {
     return;
 }
+
+$jsModule = $viewModel->getMode() === 'slider'
+    ? 'Rollpix_ImageFlipHover/js/hover-slider'
+    : 'Rollpix_ImageFlipHover/js/image-flip';
 ?>
 <script type="text/x-magento-init">
 {
     "*": {
-        "Rollpix_ImageFlipHover/js/image-flip": <?= /* @noEscape */ $viewModel->getConfigJson() ?>
+        "<?= /* @noEscape */ $jsModule ?>": <?= /* @noEscape */ $viewModel->getConfigJson() ?>
     }
 }
 </script>

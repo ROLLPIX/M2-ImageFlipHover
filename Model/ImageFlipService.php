@@ -20,6 +20,11 @@ use Magento\Store\Model\StoreManagerInterface;
 class ImageFlipService
 {
     /**
+     * @var array In-memory cache of gallery URLs keyed by product ID
+     */
+    private array $galleryCache = [];
+
+    /**
      * @var Config
      */
     private Config $config;
@@ -487,5 +492,182 @@ class ImageFlipService
             'animationType' => $this->config->getAnimationType(),
             'animationSpeed' => $this->config->getAnimationSpeed()
         ];
+    }
+
+    /**
+     * Preload gallery images for a batch of product IDs (single query)
+     *
+     * @param array $productIds
+     * @param int $maxImages
+     * @return void
+     */
+    public function preloadGalleryBatch(array $productIds, int $maxImages = 8): void
+    {
+        if (empty($productIds)) {
+            return;
+        }
+
+        // Filter out already cached
+        $productIds = array_filter($productIds, function ($id) {
+            return !isset($this->galleryCache[(int) $id]);
+        });
+
+        if (empty($productIds)) {
+            return;
+        }
+
+        $connection = $this->resourceConnection->getConnection();
+        $galleryTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery');
+        $galleryValueTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value');
+        $galleryEntityTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value_to_entity');
+
+        $storeId = (int) $this->storeManager->getStore()->getId();
+
+        $select = $connection->select()
+            ->from(['mg' => $galleryTable], ['value'])
+            ->join(
+                ['mgvte' => $galleryEntityTable],
+                'mg.value_id = mgvte.value_id',
+                ['entity_id']
+            )
+            ->joinLeft(
+                ['mgv' => $galleryValueTable],
+                'mg.value_id = mgv.value_id AND mgvte.entity_id = mgv.entity_id'
+                . ' AND mgv.store_id IN (0, ' . $storeId . ')',
+                []
+            )
+            ->where('mgvte.entity_id IN (?)', $productIds)
+            ->where('mg.media_type = ?', 'image')
+            ->where('COALESCE(mgv.disabled, 0) = 0')
+            ->group(['mgvte.entity_id', 'mg.value_id'])
+            ->order(['mgvte.entity_id ASC', 'MIN(COALESCE(mgv.position, 999)) ASC']);
+
+        $rows = $connection->fetchAll($select);
+
+        // Group by entity_id and slice to maxImages
+        $grouped = [];
+        foreach ($rows as $row) {
+            $entityId = (int) $row['entity_id'];
+            if (!isset($grouped[$entityId])) {
+                $grouped[$entityId] = [];
+            }
+            if (count($grouped[$entityId]) < $maxImages) {
+                $imageValue = $row['value'];
+                if ($this->isValidImageValue($imageValue)) {
+                    $grouped[$entityId][] = $imageValue;
+                }
+            }
+        }
+
+        // Store in cache (raw paths, URLs will be built on demand)
+        foreach ($productIds as $id) {
+            $this->galleryCache[(int) $id] = $grouped[(int) $id] ?? [];
+        }
+    }
+
+    /**
+     * Get slider image data for a product
+     *
+     * @param ProductInterface|Product $product
+     * @param string|null $imageId
+     * @return array
+     */
+    public function getSliderImageData($product, ?string $imageId = null): array
+    {
+        $productId = (int) $product->getId();
+
+        // Try cache first
+        if (isset($this->galleryCache[$productId])) {
+            $imagePaths = $this->galleryCache[$productId];
+        } else {
+            $imagePaths = $this->getAllGalleryImagesByProductId(
+                $productId,
+                $this->config->getMaxImages()
+            );
+        }
+
+        // For configurables with no gallery, try children
+        if (empty($imagePaths) && $product->getTypeId() === 'configurable') {
+            $childIds = $this->getConfigurableChildIds($productId);
+            foreach ($childIds as $childId) {
+                $childId = (int) $childId;
+                if (isset($this->galleryCache[$childId])) {
+                    $childPaths = $this->galleryCache[$childId];
+                } else {
+                    $childPaths = $this->getAllGalleryImagesByProductId(
+                        $childId,
+                        $this->config->getMaxImages()
+                    );
+                }
+                if (!empty($childPaths)) {
+                    $imagePaths = $childPaths;
+                    break;
+                }
+            }
+        }
+
+        if (count($imagePaths) < 2) {
+            return [
+                'hasSliderImages' => false,
+                'galleryUrls' => [],
+                'imageCount' => count($imagePaths)
+            ];
+        }
+
+        // Build resized URLs
+        $galleryUrls = [];
+        foreach ($imagePaths as $path) {
+            $url = $this->buildImageUrl($product, $path, $imageId);
+            if ($url) {
+                $galleryUrls[] = $url;
+            }
+        }
+
+        return [
+            'hasSliderImages' => count($galleryUrls) >= 2,
+            'galleryUrls' => $galleryUrls,
+            'imageCount' => count($galleryUrls)
+        ];
+    }
+
+    /**
+     * Get all gallery image paths for a product ID
+     *
+     * @param int $productId
+     * @param int $maxImages
+     * @return array Raw image paths
+     */
+    private function getAllGalleryImagesByProductId(int $productId, int $maxImages = 8): array
+    {
+        $connection = $this->resourceConnection->getConnection();
+        $galleryTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery');
+        $galleryValueTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value');
+        $galleryEntityTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value_to_entity');
+
+        $storeId = (int) $this->storeManager->getStore()->getId();
+
+        $select = $connection->select()
+            ->from(['mg' => $galleryTable], ['value'])
+            ->join(
+                ['mgvte' => $galleryEntityTable],
+                'mg.value_id = mgvte.value_id',
+                []
+            )
+            ->joinLeft(
+                ['mgv' => $galleryValueTable],
+                'mg.value_id = mgv.value_id AND mgvte.entity_id = mgv.entity_id'
+                . ' AND mgv.store_id IN (0, ' . $storeId . ')',
+                []
+            )
+            ->where('mgvte.entity_id = ?', $productId)
+            ->where('mg.media_type = ?', 'image')
+            ->where('COALESCE(mgv.disabled, 0) = 0')
+            ->group('mg.value_id')
+            ->order('MIN(COALESCE(mgv.position, 999)) ASC')
+            ->limit($maxImages);
+
+        $values = $connection->fetchCol($select);
+
+        return array_filter($values, [$this, 'isValidImageValue']);
     }
 }

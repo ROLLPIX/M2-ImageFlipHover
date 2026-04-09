@@ -139,6 +139,16 @@ class ImageFlip implements ArgumentInterface
     }
 
     /**
+     * Get hover mode
+     *
+     * @return string
+     */
+    public function getMode(): string
+    {
+        return $this->config->getMode();
+    }
+
+    /**
      * Get configuration as JSON for JavaScript
      *
      * @return string

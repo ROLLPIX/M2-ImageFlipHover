@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * @author Rollpix
+ * @package Rollpix_ImageFlipHoverHyvaCompat
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+    <module name="Rollpix_ImageFlipHoverHyvaCompat">
+        <sequence>
+            <module name="Rollpix_ImageFlipHover"/>
+            <module name="Hyva_Theme"/>
+        </sequence>
+    </module>
+</config>

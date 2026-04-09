@@ -1,0 +1,216 @@
+/**
+ * @author Rollpix
+ * @package Rollpix_ImageFlipHover
+ *
+ * Hover Slider - PLP gallery navigation
+ *
+ * Approach: Base image stays in flow (gives dimensions).
+ * Overlays are absolutely positioned on top, shown/hidden via CSS classes.
+ */
+
+/* === Container === */
+.has-hover-slider {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Viewport must be block for overflow:hidden to work (it's a <span>) */
+.hover-slider-viewport {
+    display: block;
+    overflow: hidden;
+}
+
+/* Luma: viewport fills product-image-wrapper */
+.product-image-container.has-hover-slider .hover-slider-viewport {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Hyvä: viewport in flow */
+.has-hover-slider:not(.product-image-container) .hover-slider-viewport {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    display: block;
+}
+
+/* Server-rendered image — fills viewport, stays in flow */
+.hover-slider-viewport > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* === Overlay images === */
+.hover-slider-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+/* --- FADE transition --- */
+.hover-slider-overlay.hover-slider-transition-fade {
+    opacity: 0;
+    transition: opacity var(--slider-transition-speed, 250ms) ease;
+}
+
+.hover-slider-overlay.hover-slider-transition-fade.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* --- SLIDE transition --- */
+.hover-slider-overlay.hover-slider-transition-slide {
+    transform: translateX(100%);
+    transition: transform var(--slider-transition-speed, 250ms) ease-out;
+}
+
+.hover-slider-overlay.hover-slider-transition-slide.visible {
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+/* Going back: animate out to the right */
+.hover-slider-overlay.hover-slider-transition-slide.leaving {
+    transform: translateX(100%);
+    pointer-events: none;
+}
+
+/* --- INSTANT transition --- */
+.hover-slider-overlay.hover-slider-transition-instant {
+    opacity: 0;
+}
+
+.hover-slider-overlay.hover-slider-transition-instant.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* === Navigation Arrows === */
+.hover-slider-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 150ms;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    padding: 0;
+    pointer-events: none;
+}
+
+.hover-slider-arrow--prev { left: 6px; }
+.hover-slider-arrow--next { right: 6px; }
+.hover-slider-arrow svg { width: 12px; height: 12px; fill: #333; }
+
+.has-hover-slider:hover .hover-slider-arrow {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.hover-slider-arrow:hover { background: #fff; }
+
+/* Disabled: always hidden, dimmed only on hover */
+.hover-slider-arrow.disabled {
+    opacity: 0 !important;
+    pointer-events: none;
+}
+
+.has-hover-slider:hover .hover-slider-arrow.disabled {
+    opacity: 0.25 !important;
+}
+
+/* === Indicators === */
+.hover-slider-indicators {
+    display: flex;
+    z-index: 10;
+    width: 100%;
+    gap: 0;
+    pointer-events: none;
+}
+
+.hover-slider-indicators--top { position: absolute; top: 0; left: 0; right: 0; }
+.hover-slider-indicators--bottom { position: absolute; bottom: 0; left: 0; right: 0; }
+.hover-slider-indicators--below { position: relative; }
+
+/* Bars */
+.hover-slider-indicators.indicator-bars { gap: 1px; }
+.hover-slider-bar {
+    height: 3px;
+    background: rgba(0, 0, 0, 0.15);
+    transition: background 200ms;
+    flex-shrink: 0;
+}
+.hover-slider-bar.active { background: rgba(0, 0, 0, 0.55); }
+.hover-slider-bar.clickable { cursor: pointer; pointer-events: auto; }
+
+/* Dots */
+.hover-slider-indicators.indicator-dots { justify-content: center; gap: 5px; padding: 6px 0; }
+.hover-slider-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(0, 0, 0, 0.25);
+    transition: background 150ms, transform 150ms;
+    border: none; padding: 0;
+}
+.hover-slider-dot.active { background: rgba(0, 0, 0, 0.7); transform: scale(1.3); }
+.hover-slider-dot.clickable { cursor: pointer; pointer-events: auto; }
+
+/* Pills */
+.hover-slider-indicators.indicator-pills { justify-content: center; gap: 4px; padding: 6px 0; }
+.hover-slider-pill {
+    width: 6px; height: 6px; border-radius: 3px;
+    background: rgba(0, 0, 0, 0.2);
+    transition: width 200ms, background 200ms;
+    border: none; padding: 0;
+}
+.hover-slider-pill.active { width: 20px; background: rgba(0, 0, 0, 0.6); }
+.hover-slider-pill.clickable { cursor: pointer; pointer-events: auto; }
+
+/* Counter */
+.hover-slider-counter {
+    font-size: 11px; color: #fff;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 2px 8px; border-radius: 10px;
+    position: absolute; right: 8px; z-index: 10;
+}
+.hover-slider-counter--top { top: 8px; }
+.hover-slider-counter--bottom { bottom: 8px; }
+
+/* Mouse tracking */
+.has-hover-slider.nav-mouse-tracking:hover { cursor: col-resize; }
+
+/* Mobile */
+@media (hover: none), (max-width: 767px) {
+    .hover-slider-arrow { display: none; }
+    .has-hover-slider.show-arrows-mobile .hover-slider-arrow {
+        display: flex; opacity: 1; pointer-events: auto;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .hover-slider-overlay,
+    .hover-slider-arrow,
+    .hover-slider-bar,
+    .hover-slider-dot,
+    .hover-slider-pill {
+        transition-duration: 0ms !important;
+    }
+}

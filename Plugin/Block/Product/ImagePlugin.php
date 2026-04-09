@@ -9,6 +9,7 @@ namespace Rollpix\ImageFlipHover\Plugin\Block\Product;
 
 use Rollpix\ImageFlipHover\Helper\Config;
 use Magento\Catalog\Block\Product\Image as ImageBlock;
+use Magento\Framework\Serialize\Serializer\Json;
 
 class ImagePlugin
 {
@@ -18,11 +19,18 @@ class ImagePlugin
     private Config $config;
 
     /**
-     * @param Config $config
+     * @var Json
      */
-    public function __construct(Config $config)
+    private Json $jsonSerializer;
+
+    /**
+     * @param Config $config
+     * @param Json $jsonSerializer
+     */
+    public function __construct(Config $config, Json $jsonSerializer)
     {
         $this->config = $config;
+        $this->jsonSerializer = $jsonSerializer;
     }
 
     /**
@@ -38,11 +46,16 @@ class ImagePlugin
             return $result;
         }
 
-        // Check if this image block has flip image data
         if (!$subject->getData('has_flip_image')) {
             return $result;
         }
 
+        // Slider mode
+        if ($subject->getData('slider_mode')) {
+            return $this->handleSliderMode($subject, $result);
+        }
+
+        // Flip mode (existing behavior)
         $flipImageUrl = $subject->getData('flip_image_url');
         $animationType = $subject->getData('flip_animation_type') ?: 'fade';
         $animationSpeed = $subject->getData('flip_animation_speed') ?: 300;
@@ -51,18 +64,97 @@ class ImagePlugin
             return $result;
         }
 
-        // Parse the existing HTML and inject flip image functionality
         return $this->injectFlipImage($result, $flipImageUrl, $animationType, $animationSpeed);
     }
 
     /**
+     * Handle slider mode injection
+     */
+    private function handleSliderMode(ImageBlock $subject, string $result): string
+    {
+        $galleryUrls = $subject->getData('gallery_urls') ?: [];
+        $imageCount = $subject->getData('image_count') ?: 0;
+
+        if ($imageCount < 2) {
+            return $result;
+        }
+
+        return $this->injectSliderHtml($result, $galleryUrls);
+    }
+
+    /**
+     * Inject slider HTML into product image output
+     */
+    private function injectSliderHtml(string $html, array $galleryUrls): string
+    {
+        $galleryJson = htmlspecialchars($this->jsonSerializer->serialize($galleryUrls), ENT_QUOTES, 'UTF-8');
+        $sliderConfig = $this->buildSliderConfig();
+        $configJson = htmlspecialchars($this->jsonSerializer->serialize($sliderConfig), ENT_QUOTES, 'UTF-8');
+        $transitionSpeed = $this->config->getTransitionSpeed();
+
+        $sliderAttrs = 'data-hover-slider="true" '
+            . 'data-gallery="' . $galleryJson . '" '
+            . 'data-slider-config="' . $configJson . '" '
+            . 'style="--slider-transition-speed: ' . $transitionSpeed . 'ms;"';
+
+        $hasContainer = strpos($html, 'product-image-container') !== false;
+
+        if ($hasContainer) {
+            // Luma path: add attributes to existing container
+            $html = preg_replace(
+                '/class="product-image-container([^"]*)"/',
+                'class="product-image-container$1 has-hover-slider" ' . $sliderAttrs,
+                $html
+            );
+
+            // Wrap the existing img in a slider viewport
+            $pattern = '/(<img\s+class="product-image-photo"[^>]*>)/s';
+            if (preg_match($pattern, $html, $matches)) {
+                $originalImg = $matches[1];
+                $sliderContainer = '<span class="hover-slider-viewport">' . $originalImg . '</span>';
+                $html = str_replace($originalImg, $sliderContainer, $html);
+            }
+        } else {
+            // Hyvä path: no wrapper container, wrap the img directly
+            $pattern = '/(<img\s[^>]*class="product-image-photo"[^>]*>)/s';
+            if (preg_match($pattern, $html, $matches)) {
+                $originalImg = $matches[1];
+                $wrapped = '<span class="has-hover-slider" ' . $sliderAttrs . '>'
+                    . '<span class="hover-slider-viewport">' . $originalImg . '</span>'
+                    . '</span>';
+                $html = str_replace($originalImg, $wrapped, $html);
+            }
+        }
+
+        return $html;
+    }
+
+    /**
+     * Build slider config array from admin settings
+     */
+    private function buildSliderConfig(): array
+    {
+        return [
+            'hoverFlip' => $this->config->isHoverFlipEnabled(),
+            'transition' => $this->config->getTransitionType(),
+            'speed' => $this->config->getTransitionSpeed(),
+            'loop' => $this->config->isLoopEnabled(),
+            'autoReturn' => $this->config->isAutoReturnEnabled(),
+            'desktop' => [
+                'nav' => $this->config->getDesktopNavigation(),
+                'indicator' => $this->config->getDesktopIndicator(),
+                'indicatorPos' => $this->config->getDesktopIndicatorPosition()
+            ],
+            'mobile' => [
+                'nav' => $this->config->getMobileNavigation(),
+                'indicator' => $this->config->getMobileIndicator(),
+                'indicatorPos' => $this->config->getMobileIndicatorPosition()
+            ]
+        ];
+    }
+
+    /**
      * Inject flip image into existing product image HTML
-     *
-     * @param string $html
-     * @param string $flipImageUrl
-     * @param string $animationType
-     * @param int $animationSpeed
-     * @return string
      */
     private function injectFlipImage(
         string $html,
@@ -70,20 +162,26 @@ class ImagePlugin
         string $animationType,
         int $animationSpeed
     ): string {
-        // Add flip image classes and data attributes to the container
-        $html = preg_replace(
-            '/class="product-image-container([^"]*)"/',
-            'class="product-image-container$1 has-flip-image flip-animation-' . htmlspecialchars($animationType) . '" '
-            . 'data-flip-image="true" '
+        $flipAttrs = 'data-flip-image="true" '
             . 'data-flip-url="' . htmlspecialchars($flipImageUrl) . '" '
             . 'data-animation-type="' . htmlspecialchars($animationType) . '" '
             . 'data-animation-speed="' . $animationSpeed . '" '
-            . 'style="--flip-animation-speed: ' . $animationSpeed . 'ms;"',
-            $html
-        );
+            . 'style="--flip-animation-speed: ' . $animationSpeed . 'ms;"';
+
+        $hasContainer = strpos($html, 'product-image-container') !== false;
+
+        if ($hasContainer) {
+            // Luma path: add attributes to existing container
+            $html = preg_replace(
+                '/class="product-image-container([^"]*)"/',
+                'class="product-image-container$1 has-flip-image flip-animation-' . htmlspecialchars($animationType) . '" '
+                . $flipAttrs,
+                $html
+            );
+        }
 
         // Find the img tag and wrap it with flip container, adding the flip image
-        $pattern = '/(<img\s+class="product-image-photo"[^>]*>)/';
+        $pattern = '/(<img\s[^>]*class="product-image-photo"[^>]*>)/s';
 
         if (preg_match($pattern, $html, $matches)) {
             $originalImg = $matches[1];
@@ -110,8 +208,15 @@ class ImagePlugin
                 htmlspecialchars((string) __('Alternate View'))
             );
 
-            // Wrap both images in flip container
-            $flipContainer = '<span class="flip-image-container">' . $primaryImg . $flipImg . '</span>';
+            if ($hasContainer) {
+                // Luma: wrap inside existing container
+                $flipContainer = '<span class="flip-image-container">' . $primaryImg . $flipImg . '</span>';
+            } else {
+                // Hyvä: create outer container with data attrs
+                $flipContainer = '<span class="has-flip-image flip-animation-' . htmlspecialchars($animationType) . '" ' . $flipAttrs . '>'
+                    . '<span class="flip-image-container">' . $primaryImg . $flipImg . '</span>'
+                    . '</span>';
+            }
 
             $html = str_replace($originalImg, $flipContainer, $html);
         }
@@ -121,10 +226,6 @@ class ImagePlugin
 
     /**
      * Extract attribute value from HTML tag
-     *
-     * @param string $html
-     * @param string $attribute
-     * @return string
      */
     private function extractAttribute(string $html, string $attribute): string
     {

@@ -14,6 +14,7 @@ use Magento\Store\Model\ScopeInterface;
 class Config extends AbstractHelper
 {
     private const XML_PATH_ENABLED = 'rollpix_imageflip/general/enabled';
+    private const XML_PATH_MODE = 'rollpix_imageflip/general/mode';
     private const XML_PATH_PRIMARY_ROLE = 'rollpix_imageflip/general/primary_role';
     private const XML_PATH_FALLBACK_ROLE = 'rollpix_imageflip/general/fallback_role';
     private const XML_PATH_ANIMATION_TYPE = 'rollpix_imageflip/general/animation_type';
@@ -25,6 +26,20 @@ class Config extends AbstractHelper
     private const XML_PATH_RELATED_PRODUCTS = 'rollpix_imageflip/locations/related_products';
     private const XML_PATH_CMS_BLOCKS = 'rollpix_imageflip/locations/cms_blocks';
     private const XML_PATH_PAGE_BUILDER = 'rollpix_imageflip/locations/page_builder';
+
+    // Hover Slider config paths
+    private const XML_PATH_ENABLE_HOVER_FLIP = 'rollpix_imageflip/hover_slider/enable_hover_flip';
+    private const XML_PATH_TRANSITION_TYPE = 'rollpix_imageflip/hover_slider/transition_type';
+    private const XML_PATH_TRANSITION_SPEED = 'rollpix_imageflip/hover_slider/transition_speed';
+    private const XML_PATH_MAX_IMAGES = 'rollpix_imageflip/hover_slider/max_images';
+    private const XML_PATH_LOOP = 'rollpix_imageflip/hover_slider/loop';
+    private const XML_PATH_AUTO_RETURN = 'rollpix_imageflip/hover_slider/auto_return';
+    private const XML_PATH_DESKTOP_NAVIGATION = 'rollpix_imageflip/hover_slider/desktop_navigation';
+    private const XML_PATH_DESKTOP_INDICATOR = 'rollpix_imageflip/hover_slider/desktop_indicator';
+    private const XML_PATH_DESKTOP_INDICATOR_POSITION = 'rollpix_imageflip/hover_slider/desktop_indicator_position';
+    private const XML_PATH_MOBILE_NAVIGATION = 'rollpix_imageflip/hover_slider/mobile_navigation';
+    private const XML_PATH_MOBILE_INDICATOR = 'rollpix_imageflip/hover_slider/mobile_indicator';
+    private const XML_PATH_MOBILE_INDICATOR_POSITION = 'rollpix_imageflip/hover_slider/mobile_indicator_position';
 
     /**
      * Check if module is enabled
@@ -208,6 +223,199 @@ class Config extends AbstractHelper
     }
 
     /**
+     * Get hover mode (flip or slider)
+     *
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getMode(?int $storeId = null): string
+    {
+        return (string) $this->scopeConfig->getValue(
+            self::XML_PATH_MODE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ) ?: 'flip';
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isSliderMode(?int $storeId = null): bool
+    {
+        return $this->getMode($storeId) === 'slider';
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isFlipMode(?int $storeId = null): bool
+    {
+        return $this->getMode($storeId) === 'flip';
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isHoverFlipEnabled(?int $storeId = null): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_ENABLE_HOVER_FLIP,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getTransitionType(?int $storeId = null): string
+    {
+        return (string) $this->scopeConfig->getValue(
+            self::XML_PATH_TRANSITION_TYPE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ) ?: 'fade';
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return int
+     */
+    public function getTransitionSpeed(?int $storeId = null): int
+    {
+        $speed = (int) $this->scopeConfig->getValue(
+            self::XML_PATH_TRANSITION_SPEED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+        return $speed > 0 ? $speed : 250;
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return int
+     */
+    public function getMaxImages(?int $storeId = null): int
+    {
+        $max = (int) $this->scopeConfig->getValue(
+            self::XML_PATH_MAX_IMAGES,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+        return max(2, min(20, $max ?: 8));
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isLoopEnabled(?int $storeId = null): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_LOOP,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isAutoReturnEnabled(?int $storeId = null): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_AUTO_RETURN,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return array
+     */
+    public function getDesktopNavigation(?int $storeId = null): array
+    {
+        $value = (string) $this->scopeConfig->getValue(
+            self::XML_PATH_DESKTOP_NAVIGATION,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+        return $value ? explode(',', $value) : ['arrows'];
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getDesktopIndicator(?int $storeId = null): string
+    {
+        return (string) $this->scopeConfig->getValue(
+            self::XML_PATH_DESKTOP_INDICATOR,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ) ?: 'bars';
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getDesktopIndicatorPosition(?int $storeId = null): string
+    {
+        return (string) $this->scopeConfig->getValue(
+            self::XML_PATH_DESKTOP_INDICATOR_POSITION,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ) ?: 'top';
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return array
+     */
+    public function getMobileNavigation(?int $storeId = null): array
+    {
+        $value = (string) $this->scopeConfig->getValue(
+            self::XML_PATH_MOBILE_NAVIGATION,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+        return $value ? explode(',', $value) : ['swipe'];
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getMobileIndicator(?int $storeId = null): string
+    {
+        return (string) $this->scopeConfig->getValue(
+            self::XML_PATH_MOBILE_INDICATOR,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ) ?: 'bars';
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return string
+     */
+    public function getMobileIndicatorPosition(?int $storeId = null): string
+    {
+        return (string) $this->scopeConfig->getValue(
+            self::XML_PATH_MOBILE_INDICATOR_POSITION,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        ) ?: 'top';
+    }
+
+    /**
      * Get all configuration as array for frontend
      *
      * @param int|null $storeId
@@ -215,12 +423,9 @@ class Config extends AbstractHelper
      */
     public function getConfigArray(?int $storeId = null): array
     {
-        return [
+        $config = [
             'enabled' => $this->isEnabled($storeId),
-            'primaryRole' => $this->getPrimaryRole($storeId),
-            'fallbackRole' => $this->getFallbackRole($storeId),
-            'animationType' => $this->getAnimationType($storeId),
-            'animationSpeed' => $this->getAnimationSpeed($storeId),
+            'mode' => $this->getMode($storeId),
             'desktopOnly' => $this->isDesktopOnly($storeId),
             'locations' => [
                 'categoryPage' => $this->isEnabledForCategoryPage($storeId),
@@ -231,5 +436,31 @@ class Config extends AbstractHelper
                 'pageBuilder' => $this->isEnabledForPageBuilder($storeId)
             ]
         ];
+
+        if ($this->isFlipMode($storeId)) {
+            $config['primaryRole'] = $this->getPrimaryRole($storeId);
+            $config['fallbackRole'] = $this->getFallbackRole($storeId);
+            $config['animationType'] = $this->getAnimationType($storeId);
+            $config['animationSpeed'] = $this->getAnimationSpeed($storeId);
+        } else {
+            $config['hoverFlip'] = $this->isHoverFlipEnabled($storeId);
+            $config['transitionType'] = $this->getTransitionType($storeId);
+            $config['transitionSpeed'] = $this->getTransitionSpeed($storeId);
+            $config['maxImages'] = $this->getMaxImages($storeId);
+            $config['loop'] = $this->isLoopEnabled($storeId);
+            $config['autoReturn'] = $this->isAutoReturnEnabled($storeId);
+            $config['desktop'] = [
+                'navigation' => $this->getDesktopNavigation($storeId),
+                'indicator' => $this->getDesktopIndicator($storeId),
+                'indicatorPosition' => $this->getDesktopIndicatorPosition($storeId)
+            ];
+            $config['mobile'] = [
+                'navigation' => $this->getMobileNavigation($storeId),
+                'indicator' => $this->getMobileIndicator($storeId),
+                'indicatorPosition' => $this->getMobileIndicatorPosition($storeId)
+            ];
+        }
+
+        return $config;
     }
 }
