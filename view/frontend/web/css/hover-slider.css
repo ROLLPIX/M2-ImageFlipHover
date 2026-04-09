@@ -25,8 +25,14 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    right: 0;
+    bottom: 0;
+    overflow: hidden !important;
+}
+
+/* Ensure wrapper also clips */
+.product-image-container.has-hover-slider .product-image-wrapper {
+    overflow: hidden !important;
 }
 
 /* Hyvä: viewport in flow */
@@ -68,20 +74,32 @@
 }
 
 /* --- SLIDE transition --- */
+/* Default: waiting off-screen to the right */
 .hover-slider-overlay.hover-slider-transition-slide {
     transform: translateX(100%);
+    opacity: 1;
     transition: transform var(--slider-transition-speed, 250ms) ease-out;
 }
 
+/* Visible: centered */
 .hover-slider-overlay.hover-slider-transition-slide.visible {
     transform: translateX(0);
     pointer-events: auto;
 }
 
-/* Going back: animate out to the right */
-.hover-slider-overlay.hover-slider-transition-slide.leaving {
-    transform: translateX(100%);
+/* Exiting to the left */
+.hover-slider-overlay.hover-slider-transition-slide.exit-left {
+    transform: translateX(-100%);
     pointer-events: none;
+}
+
+/* Base image also needs to animate out for slide */
+.hover-slider-viewport .hover-slider-base-slide {
+    transition: transform var(--slider-transition-speed, 250ms) ease-out;
+}
+
+.hover-slider-viewport .hover-slider-base-slide.exit-left {
+    transform: translateX(-100%);
 }
 
 /* --- INSTANT transition --- */
@@ -144,6 +162,22 @@
     width: 100%;
     gap: 0;
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 150ms;
+}
+
+.has-hover-slider:hover .hover-slider-indicators {
+    opacity: 1;
+}
+
+/* Counter also hidden until hover */
+.hover-slider-counter {
+    opacity: 0;
+    transition: opacity 150ms;
+}
+
+.has-hover-slider:hover .hover-slider-counter {
+    opacity: 1;
 }
 
 .hover-slider-indicators--top { position: absolute; top: 0; left: 0; right: 0; }

@@ -193,4 +193,109 @@ Translation files available: en_US, es_ES, es_AR (with voseo).
 
 ## Version
 
-Current version: 1.2.1
+Current version: 2.0.0 (branch `hover-slider`)
+
+## Local Development & Testing Environment
+
+### Docker (Magento 2 + Hyvä)
+
+A Docker-based Magento instance exists at `/home/nicolas/magento-hyva-test` (WSL Ubuntu) for testing.
+Managed via `docker compose` with Mark Shust's docker-magento setup.
+
+**Containers:** magento-hyva-test-phpfpm-1, magento-hyva-test-app-1, etc.
+
+**Access:**
+- **Storefront:** `https://magento.test` (self-signed SSL, add to hosts: `127.0.0.1 magento.test`)
+- **Admin:** `https://magento.test/admin` — user: `john.smith` / pass: `password123`
+- **PhpMyAdmin:** `http://localhost:8080` — user: `magento` / pass: `magento`
+- **DB:** host=db, database=magento, user=magento, pass=magento
+
+**Themes installed:**
+- `Magento/luma` (theme_id=3) — Luma standard
+- `Hyva/default` (theme_id=4) — Hyvä base
+- `Rollpix/hyva-default` (theme_id=5) — Rollpix child of Hyvä
+
+**Modules installed:**
+- `Rollpix_ImageFlipHover` — main module (enabled)
+- `Rollpix_ImageFlipHoverHyvaCompat` — Hyvä compat sub-module (disable for Luma testing, enable for Hyvä)
+
+**Test categories with products (226 products total):**
+- `https://magento.test/nutricion-saludable` — parent category, many products
+- `https://magento.test/nutricion-saludable/omega-3` — has product OMEGA 3 x60 (entity_id=29) with **4 gallery images** (best for slider testing)
+- `https://magento.test/nutricion-saludable/control-de-peso` — 5 products, all with 2 images
+- `https://magento.test/nutricion-saludable/digest-detox` — 3 products with 2 images
+
+### Sync & Deploy Workflow
+
+The module source is at `c:\Dropbox\ROLLPIX\repos\M2-flip-image-hover\M2-ImageFlipHover`.
+Docker mounts `./src/app/code` so files must be copied to WSL:
+
+```bash
+# 1. Sync module to Docker
+wsl -d Ubuntu -e bash -c "rm -rf /home/nicolas/magento-hyva-test/src/app/code/Rollpix/ImageFlipHover && cp -r '/mnt/c/Dropbox/ROLLPIX/repos/M2-flip-image-hover/M2-ImageFlipHover' /home/nicolas/magento-hyva-test/src/app/code/Rollpix/ImageFlipHover"
+
+# 2. For HyvaCompat (only when testing Hyvä):
+wsl -d Ubuntu -e bash -c "rm -rf /home/nicolas/magento-hyva-test/src/app/code/Rollpix/ImageFlipHoverHyvaCompat && cp -r '/mnt/c/Dropbox/ROLLPIX/repos/M2-flip-image-hover/M2-ImageFlipHover/HyvaCompat' /home/nicolas/magento-hyva-test/src/app/code/Rollpix/ImageFlipHoverHyvaCompat"
+
+# 3. Compile & deploy (needed after PHP changes)
+docker exec magento-hyva-test-phpfpm-1 bash -c "rm -rf generated/code/Rollpix var/cache/* var/page_cache/* && bin/magento setup:di:compile && bin/magento setup:static-content:deploy -f && bin/magento cache:flush"
+
+# 4. For CSS/JS-only changes (faster, no compile needed):
+docker exec magento-hyva-test-phpfpm-1 bash -c "rm -rf pub/static/frontend/Magento/luma/es_AR/Rollpix_ImageFlipHover/ var/view_preprocessed/* var/cache/* var/page_cache/* && bin/magento setup:static-content:deploy -f && bin/magento cache:flush"
+```
+
+### Switch Themes for Testing
+
+```bash
+# Switch to Luma (theme_id=3):
+docker exec magento-hyva-test-phpfpm-1 bash -c "mysql -h db -u magento -pmagento magento -e \"UPDATE core_config_data SET value=3 WHERE path='design/theme/theme_id'\""
+docker exec magento-hyva-test-phpfpm-1 bin/magento cache:flush
+
+# Switch to Hyvä (theme_id=5):
+docker exec magento-hyva-test-phpfpm-1 bash -c "mysql -h db -u magento -pmagento magento -e \"UPDATE core_config_data SET value=5 WHERE path='design/theme/theme_id'\""
+docker exec magento-hyva-test-phpfpm-1 bin/magento cache:flush
+```
+
+### HyvaCompat Module Toggle
+
+```bash
+# Disable for Luma testing:
+docker exec magento-hyva-test-phpfpm-1 bin/magento module:disable Rollpix_ImageFlipHoverHyvaCompat
+
+# Enable for Hyvä testing:
+docker exec magento-hyva-test-phpfpm-1 bin/magento module:enable Rollpix_ImageFlipHoverHyvaCompat
+# Then: setup:upgrade + setup:di:compile + cache:flush
+```
+
+### Set Module Mode via DB
+
+```bash
+# Set mode to slider:
+docker exec magento-hyva-test-phpfpm-1 bash -c "mysql -h db -u magento -pmagento magento -e \"INSERT INTO core_config_data (scope, scope_id, path, value) VALUES ('default', 0, 'rollpix_imageflip/general/mode', 'slider') ON DUPLICATE KEY UPDATE value='slider'\""
+
+# Set mode to flip:
+docker exec magento-hyva-test-phpfpm-1 bash -c "mysql -h db -u magento -pmagento magento -e \"UPDATE core_config_data SET value='flip' WHERE path='rollpix_imageflip/general/mode'\""
+
+docker exec magento-hyva-test-phpfpm-1 bin/magento cache:flush
+```
+
+### Current State of Development (hover-slider branch)
+
+**Working:**
+- Admin config UI (mode selector, all slider fields, desktop/mobile independent config)
+- PHP data pipeline: batch gallery preload, slider data injection in HTML
+- Plugin branching: flip mode untouched, slider mode injects gallery URLs + config
+- JS initialization, preloading, arrows, indicators (pills/dots/bars/counter)
+- Flip-only behavior for 2-image products in slider mode
+- HyvaCompat sub-module (JS vanilla, layout swap)
+
+**WIP / Known issues:**
+- Slide transition (track approach): viewport `<span>` needed `display: block` for `overflow: hidden` to clip the track — fix applied, needs testing
+- Hyvä PLP: PHP plugins inject data-attributes into Image block HTML (works because Hyvä still calls `$blockImage->toHtml()` via `setTemplate('Magento_Catalog::product/list/image.phtml')`)
+- HyvaCompat layout removes Luma JS block — must be disabled when testing with Luma theme
+
+**Not yet implemented:**
+- Indicator color theme (dark/light) configuration
+- Full visual testing of all transition types
+- Mobile testing
+- Performance benchmarking with large catalogs

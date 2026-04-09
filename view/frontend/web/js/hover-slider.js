@@ -95,45 +95,20 @@ define([
             var $viewport = state.$viewport;
             var $baseImg = $viewport.find('img').first();
             var alt = $baseImg.attr('alt') || '';
-            var isSlide = state.transition === 'slide';
+            var overlayTransition = state.isFlipOnly ? 'fade' : state.transition;
+            var isSlide = overlayTransition === 'slide';
 
+            // For slide transition, base image also needs to animate
             if (isSlide) {
-                // TRACK approach: all images in a flex row
-                var vpWidth = $viewport[0].offsetWidth;
-                var vpHeight = $viewport[0].offsetHeight;
-                var count = state.images.length;
+                $baseImg.addClass('hover-slider-base-slide');
+            }
 
-                var $track = $('<div class="hover-slider-track"></div>').css({
-                    display: 'flex',
-                    width: (vpWidth * count) + 'px',
-                    height: vpHeight + 'px',
-                    transition: 'transform ' + (state.cfg.speed || 250) + 'ms ease-out'
-                });
-
-                // Move base image into track
-                $baseImg.css({ width: vpWidth + 'px', height: vpHeight + 'px', objectFit: 'contain', flex: 'none' });
-                $track.append($baseImg);
-                state.$slides.push($baseImg);
-
-                // Create additional slides
-                for (var i = 1; i < count; i++) {
-                    var $slide = $('<img/>').attr('src', state.images[i]).attr('alt', alt)
-                        .css({ width: vpWidth + 'px', height: vpHeight + 'px', objectFit: 'contain', flex: 'none' });
-                    $track.append($slide);
-                    state.$slides.push($slide);
-                }
-
-                $viewport.empty().append($track);
-                state.$track = $track;
-            } else {
-                // OVERLAY approach for fade/instant
-                state.$slides.push($baseImg);
-                for (var j = 1; j < state.images.length; j++) {
-                    var $overlay = $('<img class="hover-slider-overlay"/>').attr('src', state.images[j]).attr('alt', alt)
-                        .addClass('hover-slider-transition-' + state.transition);
-                    $viewport.append($overlay);
-                    state.$slides.push($overlay);
-                }
+            state.$slides.push($baseImg);
+            for (var i = 1; i < state.images.length; i++) {
+                var $overlay = $('<img class="hover-slider-overlay"/>').attr('src', state.images[i]).attr('alt', alt)
+                    .addClass('hover-slider-transition-' + overlayTransition);
+                $viewport.append($overlay);
+                state.$slides.push($overlay);
             }
         }
 
@@ -149,11 +124,35 @@ define([
             ensureSlidesCreated(state);
             state.currentIndex = index;
 
-            if (state.transition === 'slide' && state.$track) {
-                var vpWidth = state.$viewport[0].offsetWidth;
-                state.$track.css('transform', 'translateX(-' + (index * vpWidth) + 'px)');
+            var prev = state.currentIndex;
+            var isSlide = state.transition === 'slide' && !state.isFlipOnly;
+
+            if (isSlide) {
+                var goingForward = index > prev;
+
+                // Reset all overlays to off-screen right (default position)
+                state.$viewport.find('.hover-slider-overlay').removeClass('visible exit-left');
+                // Reset base image
+                state.$slides[0].removeClass('exit-left');
+
+                if (index === 0) {
+                    // Going back to base: base slides in from left, previous exits right
+                    // Base is already in place, just remove exit-left
+                    // Previous overlay: already removed visible above, so it resets to translateX(100%)
+                } else {
+                    if (goingForward) {
+                        // Previous slides out to the left
+                        if (prev === 0) {
+                            state.$slides[0].addClass('exit-left');
+                        } else {
+                            state.$slides[prev].addClass('exit-left');
+                        }
+                    }
+                    // New slide enters from right (gets .visible → translateX(0))
+                    state.$slides[index].addClass('visible');
+                }
             } else {
-                // Fade/instant: show only target overlay
+                // Fade/instant
                 state.$viewport.find('.hover-slider-overlay').removeClass('visible');
                 if (index > 0 && state.$slides[index]) {
                     state.$slides[index].addClass('visible');
