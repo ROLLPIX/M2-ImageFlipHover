@@ -45,7 +45,7 @@ define([
             if (images.length < 2) return;
 
             var deviceCfg = isTouchDevice ? cfg.mobile : cfg.desktop;
-            var isFlipOnly = images.length === 2 && cfg.hoverFlip;
+            var showControls = images.length > 2;
 
             var state = {
                 $container: $container,
@@ -54,8 +54,6 @@ define([
                 currentIndex: 0,
                 cfg: cfg,
                 deviceCfg: deviceCfg,
-                transition: cfg.transition || 'fade',
-                isFlipOnly: isFlipOnly,
                 $slides: [],
                 slidesCreated: false
             };
@@ -68,19 +66,17 @@ define([
                 img.src = images[i];
             }
 
-            if (isFlipOnly) {
-                bindHoverEvents(state);
-                return;
+            // Controls only for 3+ images
+            if (showControls) {
+                if (deviceCfg.nav && deviceCfg.nav.indexOf('arrows') !== -1) createArrows(state);
+                if (deviceCfg.nav && deviceCfg.nav.indexOf('mouse_tracking') !== -1 && !isTouchDevice) {
+                    $container.addClass('nav-mouse-tracking');
+                    initMouseTracking(state);
+                }
+                if (deviceCfg.nav && deviceCfg.nav.indexOf('swipe') !== -1) initSwipe(state);
+                createIndicators(state);
             }
 
-            if (deviceCfg.nav && deviceCfg.nav.indexOf('arrows') !== -1) createArrows(state);
-            if (deviceCfg.nav && deviceCfg.nav.indexOf('mouse_tracking') !== -1 && !isTouchDevice) {
-                $container.addClass('nav-mouse-tracking');
-                initMouseTracking(state);
-            }
-            if (deviceCfg.nav && deviceCfg.nav.indexOf('swipe') !== -1) initSwipe(state);
-
-            createIndicators(state);
             bindHoverEvents(state);
         }
 
@@ -95,21 +91,32 @@ define([
             var $viewport = state.$viewport;
             var $baseImg = $viewport.find('img').first();
             var alt = $baseImg.attr('alt') || '';
-            var overlayTransition = state.isFlipOnly ? 'fade' : state.transition;
-            var isSlide = overlayTransition === 'slide';
+            var vpWidth = $viewport[0].offsetWidth;
+            var vpHeight = $viewport[0].offsetHeight;
+            var count = state.images.length;
+            var speed = state.cfg.speed || 250;
 
-            // For slide transition, base image also needs to animate
-            if (isSlide) {
-                $baseImg.addClass('hover-slider-base-slide');
-            }
+            var $track = $('<span class="hover-slider-track"></span>').css({
+                display: 'flex',
+                width: (vpWidth * count) + 'px',
+                height: vpHeight + 'px',
+                transition: 'transform ' + speed + 'ms ease-out'
+            });
 
+            // position:static overrides Luma's .product-image-photo { position: absolute }
+            var imgCss = { flex: 'none', width: vpWidth + 'px', height: vpHeight + 'px', objectFit: 'contain', position: 'static' };
+            $baseImg.css(imgCss);
+            $track.append($baseImg);
             state.$slides.push($baseImg);
-            for (var i = 1; i < state.images.length; i++) {
-                var $overlay = $('<img class="hover-slider-overlay"/>').attr('src', state.images[i]).attr('alt', alt)
-                    .addClass('hover-slider-transition-' + overlayTransition);
-                $viewport.append($overlay);
-                state.$slides.push($overlay);
+
+            for (var i = 1; i < count; i++) {
+                var $slide = $('<img/>').attr('src', state.images[i]).attr('alt', alt).css(imgCss);
+                $track.append($slide);
+                state.$slides.push($slide);
             }
+
+            $viewport.empty().append($track);
+            state.$track = $track;
         }
 
         function goToSlide(state, index) {
@@ -124,40 +131,8 @@ define([
             ensureSlidesCreated(state);
             state.currentIndex = index;
 
-            var prev = state.currentIndex;
-            var isSlide = state.transition === 'slide' && !state.isFlipOnly;
-
-            if (isSlide) {
-                var goingForward = index > prev;
-
-                // Reset all overlays to off-screen right (default position)
-                state.$viewport.find('.hover-slider-overlay').removeClass('visible exit-left');
-                // Reset base image
-                state.$slides[0].removeClass('exit-left');
-
-                if (index === 0) {
-                    // Going back to base: base slides in from left, previous exits right
-                    // Base is already in place, just remove exit-left
-                    // Previous overlay: already removed visible above, so it resets to translateX(100%)
-                } else {
-                    if (goingForward) {
-                        // Previous slides out to the left
-                        if (prev === 0) {
-                            state.$slides[0].addClass('exit-left');
-                        } else {
-                            state.$slides[prev].addClass('exit-left');
-                        }
-                    }
-                    // New slide enters from right (gets .visible → translateX(0))
-                    state.$slides[index].addClass('visible');
-                }
-            } else {
-                // Fade/instant
-                state.$viewport.find('.hover-slider-overlay').removeClass('visible');
-                if (index > 0 && state.$slides[index]) {
-                    state.$slides[index].addClass('visible');
-                }
-            }
+            var vpWidth = state.$viewport[0].offsetWidth;
+            state.$track.css('transform', 'translateX(-' + (index * vpWidth) + 'px)');
 
             updateIndicators(state);
             updateArrows(state);
