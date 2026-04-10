@@ -586,40 +586,48 @@ class ImageFlipService
             );
         }
 
-        // For configurables: collect images from children
+        // For configurables: collect images from children or filter parent by variant
         if ($product->getTypeId() === 'configurable') {
-            $childIds = $this->getConfigurableChildIds($productId);
             $perChild = $this->config->getConfigurableImagesPerChild();
             $maxTotal = $this->config->getMaxImages();
 
-            if (!empty($childIds)) {
-                // Preload all children galleries in a single query
-                $this->preloadGalleryBatch($childIds, $perChild > 0 ? $perChild : $maxTotal);
-
-                $childImages = [];
-                foreach ($childIds as $childId) {
-                    $childId = (int) $childId;
-                    $childPaths = $this->galleryCache[$childId] ?? [];
-                    if (!empty($childPaths)) {
-                        if ($perChild > 0) {
-                            $childPaths = array_slice($childPaths, 0, $perChild);
-                        }
-                        foreach ($childPaths as $path) {
-                            $childImages[] = $path;
-                        }
-                    }
+            // Case 1: Parent has images with associated_attributes (ConfigurableGallery)
+            if (!empty($imagePaths) && $perChild > 0 && $this->hasAssociatedAttributesColumn()) {
+                $filteredPaths = $this->getImagesGroupedByVariant($productId, $perChild, $maxTotal);
+                if (!empty($filteredPaths)) {
+                    $imagePaths = $filteredPaths;
                 }
+            }
 
-                if (!empty($childImages)) {
-                    // If parent had own images, prepend them; otherwise use only children
-                    if (!empty($imagePaths)) {
-                        $imagePaths = array_merge($imagePaths, $childImages);
-                    } else {
-                        $imagePaths = $childImages;
+            // Case 2: Parent has no images or no ConfigurableGallery — use children's images
+            if (empty($imagePaths) || (!$this->hasAssociatedAttributesColumn() && $perChild > 0)) {
+                $childIds = $this->getConfigurableChildIds($productId);
+                if (!empty($childIds)) {
+                    $this->preloadGalleryBatch($childIds, $perChild > 0 ? $perChild : $maxTotal);
+
+                    $childImages = [];
+                    foreach ($childIds as $childId) {
+                        $childId = (int) $childId;
+                        $childPaths = $this->galleryCache[$childId] ?? [];
+                        if (!empty($childPaths)) {
+                            if ($perChild > 0) {
+                                $childPaths = array_slice($childPaths, 0, $perChild);
+                            }
+                            foreach ($childPaths as $path) {
+                                $childImages[] = $path;
+                            }
+                        }
                     }
-                    // Remove duplicates preserving order, then cap at maxTotal
-                    $imagePaths = array_values(array_unique($imagePaths));
-                    $imagePaths = array_slice($imagePaths, 0, $maxTotal);
+
+                    if (!empty($childImages)) {
+                        if (!empty($imagePaths) && $perChild === 0) {
+                            $imagePaths = array_merge($imagePaths, $childImages);
+                        } else {
+                            $imagePaths = $childImages;
+                        }
+                        $imagePaths = array_values(array_unique($imagePaths));
+                        $imagePaths = array_slice($imagePaths, 0, $maxTotal);
+                    }
                 }
             }
         }
@@ -687,5 +695,105 @@ class ImageFlipService
         $values = $connection->fetchCol($select);
 
         return array_filter($values, [$this, 'isValidImageValue']);
+    }
+
+    /**
+     * Check if the associated_attributes column exists (ConfigurableGallery installed)
+     *
+     * @return bool
+     */
+    private function hasAssociatedAttributesColumn(): bool
+    {
+        static $has = null;
+        if ($has === null) {
+            $connection = $this->resourceConnection->getConnection();
+            $tableName = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value');
+            $has = $connection->tableColumnExists($tableName, 'associated_attributes');
+        }
+        return $has;
+    }
+
+    /**
+     * Get gallery images grouped by variant (using associated_attributes from ConfigurableGallery)
+     * Returns first N images per unique variant value.
+     *
+     * @param int $productId
+     * @param int $perVariant Max images per variant
+     * @param int $maxTotal Max total images
+     * @return array Image paths
+     */
+    private function getImagesGroupedByVariant(int $productId, int $perVariant, int $maxTotal): array
+    {
+        $connection = $this->resourceConnection->getConnection();
+        $galleryTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery');
+        $galleryValueTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value');
+        $galleryEntityTable = $this->resourceConnection->getTableName('catalog_product_entity_media_gallery_value_to_entity');
+
+        $storeId = (int) $this->storeManager->getStore()->getId();
+
+        $select = $connection->select()
+            ->from(['mg' => $galleryTable], ['value'])
+            ->join(
+                ['mgvte' => $galleryEntityTable],
+                'mg.value_id = mgvte.value_id',
+                []
+            )
+            ->joinLeft(
+                ['mgv' => $galleryValueTable],
+                'mg.value_id = mgv.value_id AND mgvte.entity_id = mgv.entity_id'
+                . ' AND mgv.store_id IN (0, ' . $storeId . ')',
+                ['associated_attributes']
+            )
+            ->where('mgvte.entity_id = ?', $productId)
+            ->where('mg.media_type = ?', 'image')
+            ->where('COALESCE(mgv.disabled, 0) = 0')
+            ->order('MIN(COALESCE(mgv.position, 999)) ASC')
+            ->group('mg.value_id');
+
+        $rows = $connection->fetchAll($select);
+
+        // Group images by variant
+        $byVariant = []; // variant_key => [path, path, ...]
+        $generic = [];   // images without associated_attributes (generic/all variants)
+
+        foreach ($rows as $row) {
+            $path = $row['value'];
+            if (!$this->isValidImageValue($path)) {
+                continue;
+            }
+
+            $assoc = $row['associated_attributes'] ?? '';
+            if (empty($assoc)) {
+                $generic[] = $path;
+            } else {
+                // Can have multiple: "attribute93-4,attribute93-5"
+                $variants = explode(',', $assoc);
+                foreach ($variants as $variant) {
+                    $variant = trim($variant);
+                    if (!isset($byVariant[$variant])) {
+                        $byVariant[$variant] = [];
+                    }
+                    $byVariant[$variant][] = $path;
+                }
+            }
+        }
+
+        // Collect first N per variant
+        $result = [];
+        foreach ($byVariant as $paths) {
+            $sliced = array_slice($paths, 0, $perVariant);
+            foreach ($sliced as $p) {
+                $result[] = $p;
+            }
+        }
+
+        // Add generic images
+        foreach ($generic as $p) {
+            $result[] = $p;
+        }
+
+        // Deduplicate and cap
+        $result = array_values(array_unique($result));
+        return array_slice($result, 0, $maxTotal);
     }
 }
