@@ -586,22 +586,40 @@ class ImageFlipService
             );
         }
 
-        // For configurables with no gallery, try children
-        if (empty($imagePaths) && $product->getTypeId() === 'configurable') {
+        // For configurables: collect images from children
+        if ($product->getTypeId() === 'configurable') {
             $childIds = $this->getConfigurableChildIds($productId);
-            foreach ($childIds as $childId) {
-                $childId = (int) $childId;
-                if (isset($this->galleryCache[$childId])) {
-                    $childPaths = $this->galleryCache[$childId];
-                } else {
-                    $childPaths = $this->getAllGalleryImagesByProductId(
-                        $childId,
-                        $this->config->getMaxImages()
-                    );
+            $perChild = $this->config->getConfigurableImagesPerChild();
+            $maxTotal = $this->config->getMaxImages();
+
+            if (!empty($childIds)) {
+                // Preload all children galleries in a single query
+                $this->preloadGalleryBatch($childIds, $perChild > 0 ? $perChild : $maxTotal);
+
+                $childImages = [];
+                foreach ($childIds as $childId) {
+                    $childId = (int) $childId;
+                    $childPaths = $this->galleryCache[$childId] ?? [];
+                    if (!empty($childPaths)) {
+                        if ($perChild > 0) {
+                            $childPaths = array_slice($childPaths, 0, $perChild);
+                        }
+                        foreach ($childPaths as $path) {
+                            $childImages[] = $path;
+                        }
+                    }
                 }
-                if (!empty($childPaths)) {
-                    $imagePaths = $childPaths;
-                    break;
+
+                if (!empty($childImages)) {
+                    // If parent had own images, prepend them; otherwise use only children
+                    if (!empty($imagePaths)) {
+                        $imagePaths = array_merge($imagePaths, $childImages);
+                    } else {
+                        $imagePaths = $childImages;
+                    }
+                    // Remove duplicates preserving order, then cap at maxTotal
+                    $imagePaths = array_values(array_unique($imagePaths));
+                    $imagePaths = array_slice($imagePaths, 0, $maxTotal);
                 }
             }
         }

@@ -23,6 +23,7 @@
                 <transition_type>fade</transition_type>
                 <transition_speed>250</transition_speed>
                 <max_images>8</max_images>
+                <configurable_images_per_child>0</configurable_images_per_child>
                 <loop>0</loop>
                 <auto_return>1</auto_return>
                 <desktop_navigation>arrows</desktop_navigation>

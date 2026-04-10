@@ -118,6 +118,11 @@
                     <validate>validate-number</validate>
                     <comment>Cantidad máxima de imágenes de galería por producto (2-20). Por defecto: 8</comment>
                 </field>
+                <field id="configurable_images_per_child" translate="label comment" type="text" sortOrder="45" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Imágenes por Variante (Configurables)</label>
+                    <validate>validate-number</validate>
+                    <comment><![CDATA[Para productos configurables: cantidad máxima de imágenes de cada hijo/variante. Ej: 1 = solo la primera foto de cada color. 0 = todas las fotos de todos los hijos. Por defecto: 0 (todas).]]></comment>
+                </field>
                 <field id="loop" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Navegación Circular</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>

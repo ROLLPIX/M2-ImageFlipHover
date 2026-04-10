@@ -32,6 +32,7 @@ class Config extends AbstractHelper
     private const XML_PATH_TRANSITION_TYPE = 'rollpix_imageflip/hover_slider/transition_type';
     private const XML_PATH_TRANSITION_SPEED = 'rollpix_imageflip/hover_slider/transition_speed';
     private const XML_PATH_MAX_IMAGES = 'rollpix_imageflip/hover_slider/max_images';
+    private const XML_PATH_CONFIGURABLE_IMAGES_PER_CHILD = 'rollpix_imageflip/hover_slider/configurable_images_per_child';
     private const XML_PATH_LOOP = 'rollpix_imageflip/hover_slider/loop';
     private const XML_PATH_AUTO_RETURN = 'rollpix_imageflip/hover_slider/auto_return';
     private const XML_PATH_DESKTOP_NAVIGATION = 'rollpix_imageflip/hover_slider/desktop_navigation';
@@ -307,6 +308,21 @@ class Config extends AbstractHelper
             $storeId
         );
         return max(2, min(20, $max ?: 8));
+    }
+
+    /**
+     * Max images per child/variant for configurable products. 0 = all.
+     *
+     * @param int|null $storeId
+     * @return int
+     */
+    public function getConfigurableImagesPerChild(?int $storeId = null): int
+    {
+        return (int) $this->scopeConfig->getValue(
+            self::XML_PATH_CONFIGURABLE_IMAGES_PER_CHILD,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
     }
 
     /**
