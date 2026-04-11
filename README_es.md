@@ -1,5 +1,11 @@
 # Rollpix Image Flip & Hover Slider para Magento 2
 
+![Magento 2.4.x](https://img.shields.io/badge/Magento-2.4.x-orange?logo=magento)
+![PHP 7.4–8.3](https://img.shields.io/badge/PHP-7.4–8.3-777BB4?logo=php&logoColor=white)
+![Luma Compatible](https://img.shields.io/badge/Luma-Compatible-blue)
+![Hyvä Compatible](https://img.shields.io/badge/Hyvä-Compatible-4DC0B5)
+![License MIT](https://img.shields.io/badge/License-MIT-green)
+
 **Sponsor: [www.rollpix.com](https://www.rollpix.com)**
 
 > **[Read in English](README.md)**
