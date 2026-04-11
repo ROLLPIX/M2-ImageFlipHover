@@ -16,29 +16,24 @@ define([
             return;
         }
 
-        var animationSpeed = config.animationSpeed || 300;
-        var animationType = config.animationType || 'fade';
-        var desktopOnly = config.desktopOnly || false;
-        var initTimeout = null;
-        var mobileBreakpoint = 768;
+        var isTouchDevice = ('ontouchstart' in window) || window.matchMedia('(hover: none)').matches;
 
-        /**
-         * Check if current device is desktop based on screen width
-         * @returns {boolean}
-         */
-        function isDesktop() {
-            return window.innerWidth >= mobileBreakpoint;
+        // Flip mode on mobile is handled by hover-slider.js (auto-upgrade)
+        if (isTouchDevice) {
+            return;
         }
 
-        /**
-         * Check if flip should be enabled based on device type
-         * @returns {boolean}
-         */
+        // Desktop only if desktopEnabled
+        if (config.desktopEnabled === false) {
+            return;
+        }
+
+        var animationSpeed = config.animationSpeed || 300;
+        var animationType = config.animationType || 'fade';
+        var initTimeout = null;
+
         function shouldEnableFlip() {
-            if (!desktopOnly) {
-                return true;
-            }
-            return isDesktop();
+            return true; // already checked above
         }
 
         /**

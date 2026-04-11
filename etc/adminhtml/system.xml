@@ -16,150 +16,156 @@
             <label>Image Flip Hover</label>
             <tab>rollpix</tab>
             <resource>Rollpix_ImageFlipHover::config</resource>
-            <group id="info" translate="label" sortOrder="999" showInDefault="1" showInWebsite="0" showInStore="0">
-                <label>Información del módulo</label>
-                <field id="module_name" translate="label" type="label" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Módulo</label>
-                    <comment>Rollpix_ImageFlipHover</comment>
-                </field>
-                <field id="module_version" translate="label" type="label" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Versión</label>
-                    <frontend_model>Rollpix\ImageFlipHover\Block\Adminhtml\System\Config\ModuleVersion</frontend_model>
-                </field>
-                <field id="module_repo" translate="label" type="label" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Repositorio</label>
-                    <comment><![CDATA[<a href="https://github.com/ROLLPIX/M2-ImageFlipHover" target="_blank">GitHub</a>]]></comment>
-                </field>
-                <field id="module_manual" translate="label" type="label" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
-                    <label>Manual de usuario</label>
-                    <comment><![CDATA[<a href="https://github.com/ROLLPIX/M2-ImageFlipHover/blob/master/manual.md" target="_blank">Ver manual</a>]]></comment>
-                </field>
-            </group>
+
+            <!-- ==================== GENERAL ==================== -->
             <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Configuración General</label>
                 <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Habilitar</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Habilitar o deshabilitar el efecto de cambio de imagen al pasar el mouse sobre el producto.</comment>
+                    <comment>Habilitar o deshabilitar el módulo.</comment>
                 </field>
-                <field id="mode" translate="label comment" type="select" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Modo de Hover</label>
+                <field id="mode" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Modo</label>
                     <source_model>Rollpix\ImageFlipHover\Model\Config\Source\HoverMode</source_model>
                     <comment><![CDATA[<strong>Flip:</strong> Muestra una imagen alternativa al pasar el mouse. <strong>Slider:</strong> Permite navegar todas las imágenes de la galería del producto.]]></comment>
                     <depends>
                         <field id="enabled">1</field>
                     </depends>
                 </field>
-                <field id="primary_role" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+            </group>
+
+            <!-- ==================== FLIP MODE ==================== -->
+            <group id="flip" translate="label comment" type="text" sortOrder="12" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Modo Flip</label>
+                <comment>Configuración del efecto de cambio de imagen (solo aplica en modo Flip).</comment>
+                <field id="primary_role" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Rol de Imagen Principal</label>
                     <source_model>Rollpix\ImageFlipHover\Model\Config\Source\ImageRoles</source_model>
-                    <comment><![CDATA[Selecciona el rol de imagen a mostrar al pasar el mouse. Puedes seleccionar cualquier rol de imagen (nativo o personalizado), o elegir "Segunda Imagen de Galería" para usar la segunda imagen de la galería del producto.]]></comment>
-                    <depends>
-                        <field id="enabled">1</field>
-                        <field id="mode">flip</field>
-                    </depends>
+                    <comment><![CDATA[Rol de imagen a mostrar en hover. "Segunda Imagen de Galería" usa la segunda imagen por posición.]]></comment>
                 </field>
-                <field id="fallback_role" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="fallback_role" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Rol de Imagen de Respaldo</label>
                     <source_model>Rollpix\ImageFlipHover\Model\Config\Source\ImageRoles</source_model>
-                    <comment><![CDATA[Si el producto no tiene una imagen con el rol principal, se usará este rol en su lugar. También puedes seleccionar "Segunda Imagen de Galería" como respaldo.]]></comment>
-                    <depends>
-                        <field id="enabled">1</field>
-                        <field id="mode">flip</field>
-                    </depends>
+                    <comment>Se usa si el producto no tiene imagen con el rol principal.</comment>
                 </field>
-                <field id="animation_type" translate="label comment" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="animation_type" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Tipo de Animación</label>
                     <source_model>Rollpix\ImageFlipHover\Model\Config\Source\AnimationType</source_model>
-                    <comment>Selecciona el tipo de animación para la transición de imagen.</comment>
-                    <depends>
-                        <field id="enabled">1</field>
-                        <field id="mode">flip</field>
-                    </depends>
+                    <comment>Efecto de transición visual al hacer hover.</comment>
                 </field>
-                <field id="animation_speed" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="animation_speed" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Velocidad de Animación (ms)</label>
                     <validate>validate-number validate-greater-than-zero</validate>
                     <comment>Duración de la animación en milisegundos. Por defecto: 300</comment>
-                    <depends>
-                        <field id="enabled">1</field>
-                        <field id="mode">flip</field>
-                    </depends>
-                </field>
-                <field id="desktop_only" translate="label comment" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Solo Desktop</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Si se habilita, el efecto de cambio de imagen solo funcionará en dispositivos de escritorio (pantallas mayores a 768px).</comment>
-                    <depends>
-                        <field id="enabled">1</field>
-                    </depends>
                 </field>
             </group>
-            <group id="hover_slider" translate="label comment" type="text" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>Configuración del Slider</label>
-                <comment><![CDATA[Estas opciones solo aplican cuando el modo de hover es "Slider de galería".]]></comment>
+
+            <!-- ==================== SLIDER MODE ==================== -->
+            <group id="hover_slider" translate="label comment" type="text" sortOrder="13" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Modo Slider</label>
+                <comment>Configuración de la navegación de galería (solo aplica en modo Slider).</comment>
                 <field id="enable_hover_flip" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Habilitar Hover Flip</label>
+                    <label>Hover Flip</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment><![CDATA[Al hacer hover, muestra automáticamente la segunda imagen (como el modo flip). Luego se puede navegar el resto con los controles. Si el producto tiene solo 2 fotos, funciona como flip sin controles de slider.]]></comment>
+                    <comment>Al hacer hover, avanza automáticamente a la segunda imagen.</comment>
                 </field>
-                <field id="transition_type" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="transition_type" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Tipo de Transición</label>
                     <source_model>Rollpix\ImageFlipHover\Model\Config\Source\TransitionType</source_model>
-                    <comment>Efecto de transición entre imágenes del slider.</comment>
                 </field>
                 <field id="transition_speed" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Velocidad de Transición (ms)</label>
                     <validate>validate-number validate-greater-than-zero</validate>
-                    <comment>Duración de la transición en milisegundos. Por defecto: 250</comment>
+                    <comment>Por defecto: 250</comment>
                 </field>
                 <field id="max_images" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Máximo de Imágenes</label>
                     <validate>validate-number</validate>
-                    <comment>Cantidad máxima de imágenes de galería por producto (2-20). Por defecto: 8</comment>
+                    <comment>Cantidad máxima de imágenes por producto (2-20). Por defecto: 8</comment>
                 </field>
                 <field id="configurable_images_per_child" translate="label comment" type="text" sortOrder="45" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Imágenes por Variante (Configurables)</label>
+                    <label>Imágenes por Variante</label>
                     <validate>validate-number</validate>
-                    <comment><![CDATA[Para productos configurables: cantidad máxima de imágenes de cada hijo/variante. Ej: 1 = solo la primera foto de cada color. 0 = todas las fotos de todos los hijos. Por defecto: 0 (todas).]]></comment>
+                    <comment><![CDATA[Para configurables: máximo de imágenes de cada hijo/variante. 1 = solo la primera foto de cada color. 0 = todas. Por defecto: 0.]]></comment>
                 </field>
                 <field id="loop" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Navegación Circular</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Permitir navegar de la última imagen a la primera y viceversa.</comment>
+                    <comment>Navegar de la última imagen a la primera y viceversa.</comment>
                 </field>
                 <field id="auto_return" translate="label comment" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Volver a Imagen Principal</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Al quitar el mouse del producto, volver automáticamente a la primera imagen.</comment>
-                </field>
-                <field id="desktop_navigation" translate="label comment" type="multiselect" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Navegación Desktop</label>
-                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\DesktopNavigationType</source_model>
-                    <comment>Métodos de navegación habilitados en desktop. Se pueden activar varios simultáneamente.</comment>
-                </field>
-                <field id="desktop_indicator" translate="label" type="select" sortOrder="110" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Indicador Desktop</label>
-                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\IndicatorType</source_model>
-                </field>
-                <field id="desktop_indicator_position" translate="label" type="select" sortOrder="120" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Posición del Indicador Desktop</label>
-                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\IndicatorPosition</source_model>
-                </field>
-                <field id="mobile_navigation" translate="label comment" type="multiselect" sortOrder="200" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Navegación Mobile</label>
-                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\MobileNavigationType</source_model>
-                    <comment>Métodos de navegación habilitados en dispositivos móviles.</comment>
-                </field>
-                <field id="mobile_indicator" translate="label" type="select" sortOrder="210" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Indicador Mobile</label>
-                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\IndicatorType</source_model>
-                </field>
-                <field id="mobile_indicator_position" translate="label" type="select" sortOrder="220" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Posición del Indicador Mobile</label>
-                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\IndicatorPosition</source_model>
+                    <comment>Al quitar el mouse, volver a la primera imagen.</comment>
                 </field>
             </group>
+
+            <!-- ==================== DESKTOP ==================== -->
+            <group id="desktop" translate="label" type="text" sortOrder="14" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Desktop</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Habilitar en Desktop</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Activar el módulo en dispositivos de escritorio (pantallas mayores a 768px).</comment>
+                </field>
+                <field id="navigation" translate="label comment" type="multiselect" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Navegación</label>
+                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\DesktopNavigationType</source_model>
+                    <comment>Métodos de navegación. Se pueden activar varios simultáneamente.</comment>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="indicator" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Indicador de Posición</label>
+                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\IndicatorType</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="indicator_position" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Posición del Indicador</label>
+                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\IndicatorPosition</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+
+            <!-- ==================== MOBILE ==================== -->
+            <group id="mobile" translate="label" type="text" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Mobile</label>
+                <field id="enabled" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Habilitar en Mobile</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>Activar el módulo en dispositivos móviles (pantallas menores a 768px).</comment>
+                </field>
+                <field id="navigation" translate="label comment" type="multiselect" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Navegación</label>
+                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\MobileNavigationType</source_model>
+                    <comment>Métodos de navegación en dispositivos móviles.</comment>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="indicator" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Indicador de Posición</label>
+                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\IndicatorType</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="indicator_position" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Posición del Indicador</label>
+                    <source_model>Rollpix\ImageFlipHover\Model\Config\Source\IndicatorPosition</source_model>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+            </group>
+
+            <!-- ==================== LOCATIONS ==================== -->
             <group id="locations" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Ubicaciones Habilitadas</label>
                 <field id="category_page" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -181,12 +187,33 @@
                 <field id="cms_blocks" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Bloques CMS</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Habilitar para widgets de productos insertados en bloques y páginas CMS.</comment>
+                    <comment>Widgets de productos insertados en bloques y páginas CMS.</comment>
                 </field>
                 <field id="page_builder" translate="label comment" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Page Builder</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>Habilitar para el widget de Productos de Page Builder y otros contenidos de Page Builder.</comment>
+                    <comment>Widget de Productos de Page Builder.</comment>
+                </field>
+            </group>
+
+            <!-- ==================== INFO ==================== -->
+            <group id="info" translate="label" sortOrder="999" showInDefault="1" showInWebsite="0" showInStore="0">
+                <label>Información del Módulo</label>
+                <field id="module_name" translate="label" type="label" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Módulo</label>
+                    <comment>Rollpix_ImageFlipHover</comment>
+                </field>
+                <field id="module_version" translate="label" type="label" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Versión</label>
+                    <frontend_model>Rollpix\ImageFlipHover\Block\Adminhtml\System\Config\ModuleVersion</frontend_model>
+                </field>
+                <field id="module_repo" translate="label" type="label" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Repositorio</label>
+                    <comment><![CDATA[<a href="https://github.com/ROLLPIX/M2-ImageFlipHover" target="_blank">GitHub</a>]]></comment>
+                </field>
+                <field id="module_manual" translate="label" type="label" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Manual de usuario</label>
+                    <comment><![CDATA[<a href="https://github.com/ROLLPIX/M2-ImageFlipHover/blob/master/manual.md" target="_blank">Ver manual</a>]]></comment>
                 </field>
             </group>
         </section>

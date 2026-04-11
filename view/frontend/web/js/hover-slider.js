@@ -15,17 +15,21 @@ define([
     'use strict';
 
     return function (config) {
-        if (!config.enabled || config.mode !== 'slider') {
+        if (!config.enabled) {
             return;
         }
 
         var isTouchDevice = ('ontouchstart' in window) || window.matchMedia('(hover: none)').matches;
-        var desktopOnly = config.desktopOnly || false;
         var initTimeout = null;
 
+        // hover-slider.js handles ALL cases:
+        // - Slider mode: desktop + mobile
+        // - Flip mode on mobile: auto-upgrade to slider (touch has no hover)
+        // - Flip mode on desktop: behaves as slider with hoverFlip (hover shows image 2)
+
         function shouldEnable() {
-            if (!desktopOnly) return true;
-            return window.innerWidth >= 768;
+            if (isTouchDevice) return config.mobileEnabled !== false;
+            return config.desktopEnabled !== false;
         }
 
         function initSliders() {

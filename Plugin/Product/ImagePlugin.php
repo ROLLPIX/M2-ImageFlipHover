@@ -58,11 +58,9 @@ class ImagePlugin
             return $result;
         }
 
-        if ($this->config->isSliderMode()) {
-            return $this->attachSliderData($result, $product, $imageId);
-        }
-
-        return $this->attachFlipData($result, $product, $imageId);
+        // Always attach slider data — handles both slider mode and flip mode
+        // (flip on desktop = slider with hoverFlip, flip on mobile = auto-upgrade to slider)
+        return $this->attachSliderData($result, $product, $imageId);
     }
 
     /**

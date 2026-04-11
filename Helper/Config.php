@@ -13,21 +13,17 @@ use Magento\Store\Model\ScopeInterface;
 
 class Config extends AbstractHelper
 {
+    // General
     private const XML_PATH_ENABLED = 'rollpix_imageflip/general/enabled';
     private const XML_PATH_MODE = 'rollpix_imageflip/general/mode';
-    private const XML_PATH_PRIMARY_ROLE = 'rollpix_imageflip/general/primary_role';
-    private const XML_PATH_FALLBACK_ROLE = 'rollpix_imageflip/general/fallback_role';
-    private const XML_PATH_ANIMATION_TYPE = 'rollpix_imageflip/general/animation_type';
-    private const XML_PATH_ANIMATION_SPEED = 'rollpix_imageflip/general/animation_speed';
-    private const XML_PATH_DESKTOP_ONLY = 'rollpix_imageflip/general/desktop_only';
-    private const XML_PATH_CATEGORY_PAGE = 'rollpix_imageflip/locations/category_page';
-    private const XML_PATH_WIDGET_PRODUCTS = 'rollpix_imageflip/locations/widget_products';
-    private const XML_PATH_SEARCH_RESULTS = 'rollpix_imageflip/locations/search_results';
-    private const XML_PATH_RELATED_PRODUCTS = 'rollpix_imageflip/locations/related_products';
-    private const XML_PATH_CMS_BLOCKS = 'rollpix_imageflip/locations/cms_blocks';
-    private const XML_PATH_PAGE_BUILDER = 'rollpix_imageflip/locations/page_builder';
 
-    // Hover Slider config paths
+    // Flip mode
+    private const XML_PATH_PRIMARY_ROLE = 'rollpix_imageflip/flip/primary_role';
+    private const XML_PATH_FALLBACK_ROLE = 'rollpix_imageflip/flip/fallback_role';
+    private const XML_PATH_ANIMATION_TYPE = 'rollpix_imageflip/flip/animation_type';
+    private const XML_PATH_ANIMATION_SPEED = 'rollpix_imageflip/flip/animation_speed';
+
+    // Slider mode
     private const XML_PATH_ENABLE_HOVER_FLIP = 'rollpix_imageflip/hover_slider/enable_hover_flip';
     private const XML_PATH_TRANSITION_TYPE = 'rollpix_imageflip/hover_slider/transition_type';
     private const XML_PATH_TRANSITION_SPEED = 'rollpix_imageflip/hover_slider/transition_speed';
@@ -35,12 +31,26 @@ class Config extends AbstractHelper
     private const XML_PATH_CONFIGURABLE_IMAGES_PER_CHILD = 'rollpix_imageflip/hover_slider/configurable_images_per_child';
     private const XML_PATH_LOOP = 'rollpix_imageflip/hover_slider/loop';
     private const XML_PATH_AUTO_RETURN = 'rollpix_imageflip/hover_slider/auto_return';
-    private const XML_PATH_DESKTOP_NAVIGATION = 'rollpix_imageflip/hover_slider/desktop_navigation';
-    private const XML_PATH_DESKTOP_INDICATOR = 'rollpix_imageflip/hover_slider/desktop_indicator';
-    private const XML_PATH_DESKTOP_INDICATOR_POSITION = 'rollpix_imageflip/hover_slider/desktop_indicator_position';
-    private const XML_PATH_MOBILE_NAVIGATION = 'rollpix_imageflip/hover_slider/mobile_navigation';
-    private const XML_PATH_MOBILE_INDICATOR = 'rollpix_imageflip/hover_slider/mobile_indicator';
-    private const XML_PATH_MOBILE_INDICATOR_POSITION = 'rollpix_imageflip/hover_slider/mobile_indicator_position';
+
+    // Desktop
+    private const XML_PATH_DESKTOP_ENABLED = 'rollpix_imageflip/desktop/enabled';
+    private const XML_PATH_DESKTOP_NAVIGATION = 'rollpix_imageflip/desktop/navigation';
+    private const XML_PATH_DESKTOP_INDICATOR = 'rollpix_imageflip/desktop/indicator';
+    private const XML_PATH_DESKTOP_INDICATOR_POSITION = 'rollpix_imageflip/desktop/indicator_position';
+
+    // Mobile
+    private const XML_PATH_MOBILE_ENABLED = 'rollpix_imageflip/mobile/enabled';
+    private const XML_PATH_MOBILE_NAVIGATION = 'rollpix_imageflip/mobile/navigation';
+    private const XML_PATH_MOBILE_INDICATOR = 'rollpix_imageflip/mobile/indicator';
+    private const XML_PATH_MOBILE_INDICATOR_POSITION = 'rollpix_imageflip/mobile/indicator_position';
+
+    // Locations
+    private const XML_PATH_CATEGORY_PAGE = 'rollpix_imageflip/locations/category_page';
+    private const XML_PATH_WIDGET_PRODUCTS = 'rollpix_imageflip/locations/widget_products';
+    private const XML_PATH_SEARCH_RESULTS = 'rollpix_imageflip/locations/search_results';
+    private const XML_PATH_RELATED_PRODUCTS = 'rollpix_imageflip/locations/related_products';
+    private const XML_PATH_CMS_BLOCKS = 'rollpix_imageflip/locations/cms_blocks';
+    private const XML_PATH_PAGE_BUILDER = 'rollpix_imageflip/locations/page_builder';
 
     /**
      * Check if module is enabled
@@ -119,18 +129,39 @@ class Config extends AbstractHelper
     }
 
     /**
-     * Check if desktop only mode is enabled
-     *
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isDesktopEnabled(?int $storeId = null): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_DESKTOP_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * @param int|null $storeId
+     * @return bool
+     */
+    public function isMobileEnabled(?int $storeId = null): bool
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_MOBILE_ENABLED,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * @deprecated Use isDesktopEnabled() and isMobileEnabled() instead
      * @param int|null $storeId
      * @return bool
      */
     public function isDesktopOnly(?int $storeId = null): bool
     {
-        return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_DESKTOP_ONLY,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
+        return $this->isDesktopEnabled($storeId) && !$this->isMobileEnabled($storeId);
     }
 
     /**
@@ -442,7 +473,8 @@ class Config extends AbstractHelper
         $config = [
             'enabled' => $this->isEnabled($storeId),
             'mode' => $this->getMode($storeId),
-            'desktopOnly' => $this->isDesktopOnly($storeId),
+            'desktopEnabled' => $this->isDesktopEnabled($storeId),
+            'mobileEnabled' => $this->isMobileEnabled($storeId),
             'locations' => [
                 'categoryPage' => $this->isEnabledForCategoryPage($storeId),
                 'widgetProducts' => $this->isEnabledForWidgetProducts($storeId),
@@ -453,29 +485,24 @@ class Config extends AbstractHelper
             ]
         ];
 
-        if ($this->isFlipMode($storeId)) {
-            $config['primaryRole'] = $this->getPrimaryRole($storeId);
-            $config['fallbackRole'] = $this->getFallbackRole($storeId);
-            $config['animationType'] = $this->getAnimationType($storeId);
-            $config['animationSpeed'] = $this->getAnimationSpeed($storeId);
-        } else {
-            $config['hoverFlip'] = $this->isHoverFlipEnabled($storeId);
-            $config['transitionType'] = $this->getTransitionType($storeId);
-            $config['transitionSpeed'] = $this->getTransitionSpeed($storeId);
-            $config['maxImages'] = $this->getMaxImages($storeId);
-            $config['loop'] = $this->isLoopEnabled($storeId);
-            $config['autoReturn'] = $this->isAutoReturnEnabled($storeId);
-            $config['desktop'] = [
-                'navigation' => $this->getDesktopNavigation($storeId),
-                'indicator' => $this->getDesktopIndicator($storeId),
-                'indicatorPosition' => $this->getDesktopIndicatorPosition($storeId)
-            ];
-            $config['mobile'] = [
-                'navigation' => $this->getMobileNavigation($storeId),
-                'indicator' => $this->getMobileIndicator($storeId),
-                'indicatorPosition' => $this->getMobileIndicatorPosition($storeId)
-            ];
-        }
+        // Slider settings (always included — flip mode uses them for mobile auto-upgrade)
+        $config['hoverFlip'] = $this->isFlipMode($storeId) ? true : $this->isHoverFlipEnabled($storeId);
+        $config['transitionType'] = $this->isFlipMode($storeId) ? 'fade' : $this->getTransitionType($storeId);
+        $config['transitionSpeed'] = $this->isFlipMode($storeId) ? $this->getAnimationSpeed($storeId) : $this->getTransitionSpeed($storeId);
+        $config['maxImages'] = $this->getMaxImages($storeId);
+        $config['loop'] = $this->isLoopEnabled($storeId);
+        $config['autoReturn'] = true;
+
+        $config['desktop'] = [
+            'navigation' => $this->getDesktopNavigation($storeId),
+            'indicator' => $this->getDesktopIndicator($storeId),
+            'indicatorPosition' => $this->getDesktopIndicatorPosition($storeId)
+        ];
+        $config['mobile'] = [
+            'navigation' => $this->getMobileNavigation($storeId),
+            'indicator' => $this->getMobileIndicator($storeId),
+            'indicatorPosition' => $this->getMobileIndicatorPosition($storeId)
+        ];
 
         return $config;
     }

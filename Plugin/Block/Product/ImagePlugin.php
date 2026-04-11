@@ -50,21 +50,12 @@ class ImagePlugin
             return $result;
         }
 
-        // Slider mode
+        // Always inject slider HTML (handles both modes)
         if ($subject->getData('slider_mode')) {
             return $this->handleSliderMode($subject, $result);
         }
 
-        // Flip mode (existing behavior)
-        $flipImageUrl = $subject->getData('flip_image_url');
-        $animationType = $subject->getData('flip_animation_type') ?: 'fade';
-        $animationSpeed = $subject->getData('flip_animation_speed') ?: 300;
-
-        if (!$flipImageUrl) {
-            return $result;
-        }
-
-        return $this->injectFlipImage($result, $flipImageUrl, $animationType, $animationSpeed);
+        return $result;
     }
 
     /**
@@ -219,6 +210,35 @@ class ImagePlugin
             }
 
             $html = str_replace($originalImg, $flipContainer, $html);
+        }
+
+        return $html;
+    }
+
+    /**
+     * Add flip data-attributes to existing slider container for desktop flip JS
+     */
+    private function injectFlipDataAttributes(string $html, ImageBlock $subject): string
+    {
+        $flipUrl = $subject->getData('flip_image_url');
+        $animationType = $subject->getData('flip_animation_type') ?: 'fade';
+        $animationSpeed = $subject->getData('flip_animation_speed') ?: 300;
+
+        $flipAttrs = 'data-flip-image="true" '
+            . 'data-flip-url="' . htmlspecialchars($flipUrl) . '" '
+            . 'data-animation-type="' . htmlspecialchars($animationType) . '" '
+            . 'data-animation-speed="' . $animationSpeed . '"';
+
+        // Add to the has-hover-slider container if it exists
+        if (strpos($html, 'has-hover-slider') !== false) {
+            $html = str_replace('data-hover-slider="true"', 'data-hover-slider="true" ' . $flipAttrs, $html);
+        } elseif (strpos($html, 'product-image-container') !== false) {
+            // Fallback: add to product-image-container
+            $html = preg_replace(
+                '/class="product-image-container([^"]*)"/',
+                'class="product-image-container$1 has-flip-image flip-animation-' . htmlspecialchars($animationType) . '" ' . $flipAttrs,
+                $html
+            );
         }
 
         return $html;

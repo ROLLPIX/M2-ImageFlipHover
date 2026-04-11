@@ -20,12 +20,13 @@ $configJson = $viewModel->getConfigJson();
     var initTimeout = null;
 
     function shouldEnable() {
-        if (!config.desktopOnly) return true;
-        return window.innerWidth >= 768;
+        if (isTouchDevice) return config.mobileEnabled !== false;
+        return config.desktopEnabled !== false;
     }
 
     function initAll() {
-        if (config.mode === 'slider') initSliders();
+        // Mobile: always use slider (flip auto-upgrades to slider on touch)
+        if (config.mode === 'slider' || isTouchDevice) initSliders();
         else initFlipImages();
     }
 
