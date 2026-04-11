@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-04-10
+
+### Added
+- **Slider mode**: new "Slider de galería" mode that allows browsing all product gallery images from PLP with arrows, mouse tracking, swipe, and click-on-indicator navigation
+- **Independent desktop/mobile config**: separate navigation methods and indicator styles for each device
+- **Navigation types**: Arrows, Mouse Tracking (desktop), Swipe (mobile), Click on Indicators
+- **Indicator types**: Proportional Bars, Dots, Pills (elongated active dot), Counter (1/5), None
+- **Transition types**: Slide (carousel), Fade (crossfade), Instant (no animation)
+- **Configurable product support**: collect images from all children, not just the first child
+- **Images per variant**: configurable max images per child/color (e.g., 1 = one photo per color)
+- **ConfigurableGallery integration**: reads `associated_attributes` to filter parent images by variant when Rollpix_ConfigurableGallery is installed
+- **Hyvä compatibility**: `Rollpix_ImageFlipHoverHyvaCompat` sub-module with vanilla JS (no jQuery/RequireJS)
+- **Hover flip in slider mode**: optional auto-advance to image 2 on hover, with full gallery navigation available
+- **Loop navigation**: optional circular navigation (last → first)
+- **Auto return**: optionally return to first image on mouse leave
+- Admin config: 12 new fields in "Slider Configuration" group
+- Source models: `DesktopNavigationType`, `MobileNavigationType`, `IndicatorType`, `IndicatorPosition`, `TransitionType`, `HoverMode`
+
+### Changed
+- Version bump to 2.0.0 (significant feature addition, opted for major version to prevent automatic composer updates on existing installations)
+- CSS selectors changed from `.product-image-container.has-flip-image` to `.has-flip-image` for Hyvä compatibility
+- `ImageFlipService`: added batch gallery preload (`preloadGalleryBatch`) for single-query performance
+- `CollectionPlugin`: added `afterLoad()` for batch preloading in slider mode
+- `ImagePlugin` (ImageFactory): branching by mode (flip/slider) in `afterCreate()`
+- `Block\Product\ImagePlugin`: slider HTML injection with `data-gallery` and `data-slider-config` JSON attributes
+- `Helper\Config`: 15 new getter methods for slider configuration
+- Admin info block moved to last position (sortOrder 999)
+
+### Fixed
+- Mobile: indicators and controls always visible (no hover dependency on touch devices)
+- Mobile: swipe enabled for all products with 2+ images
+- Arrows: disabled state invisible without hover, dimmed on hover
+
 ## [1.3.5] - 2026-04-08
 
 ### Fixed

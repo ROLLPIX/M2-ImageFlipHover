@@ -1,22 +1,41 @@
 # Rollpix Image Flip Hover for Magento 2
 
-A Magento 2 module that displays an alternate product image on mouse hover in category pages, product widgets, sliders, and grids. Supports custom image roles with fallback configuration.
+Browse product gallery images directly from the product listing page (PLP). Two modes: **Flip** (single alternate image on hover) and **Slider** (navigate all images with arrows, swipe, mouse tracking). Compatible with Luma and Hyvä themes.
 
 ## Features
 
+### Flip Mode (classic)
 - **Configurable Image Roles**: Select any image role (native or custom) for the hover image
-- **Second Gallery Image Option**: Use the second image in the product gallery as flip image (no role assignment needed)
+- **Second Gallery Image Option**: Use the second image in the product gallery as flip image
 - **Fallback Support**: Configure a fallback image role when the primary role is not set
-- **Multiple Animation Types**: Fade, Slide (all directions), Zoom, and 3D Flip animations
-- **Configurable Animation Speed**: Customize the transition duration
-- **Location Control**: Enable/disable for specific locations (category pages, widgets, search results, related products, CMS blocks, Page Builder)
-- **Page Builder Support**: Full support for Page Builder Products widget and dynamic content
-- **CMS Block Support**: Works with product widgets embedded in CMS blocks and pages
-- **Third-Party Compatible**: Works with any module that uses Magento's standard `ImageFactory` for product images
-- **Touch Device Support**: Tap to toggle flip on mobile devices
-- **Lazy Loading**: Flip images are loaded on first hover to optimize performance
-- **Dynamic Content Support**: Automatically initializes for AJAX-loaded content (infinite scroll, sliders, etc.)
+- **Multiple Animation Types**: Fade, Slide, Zoom, and 3D Flip animations
+
+### Slider Mode (v2.0)
+- **Full Gallery Navigation**: Browse all product images from PLP without entering product page
+- **Navigation Methods**: Arrows, Mouse Tracking (desktop), Swipe (mobile), Click on Indicators
+- **Indicator Types**: Proportional Bars, Dots, Pills (elongated active), Counter (1/5), None
+- **Transition Effects**: Slide (carousel), Fade (crossfade), Instant
+- **Independent Desktop/Mobile Config**: Different navigation and indicators per device
+- **Hover Flip Integration**: Optionally auto-advance to image 2 on hover
+- **Configurable Products**: Collect images from all children, with "images per variant" limit (e.g., 1 photo per color)
+- **ConfigurableGallery Integration**: Filter parent images by variant when Rollpix_ConfigurableGallery is installed
+
+### General
+- **Location Control**: Enable/disable per location (category pages, widgets, search, related, CMS, Page Builder)
+- **Luma + Hyvä Compatible**: Full support for both theme frameworks
+- **Lazy Loading**: Images loaded on first interaction
+- **Dynamic Content**: Auto-initializes for AJAX-loaded content (infinite scroll, sliders)
 - **Accessibility**: Respects `prefers-reduced-motion` preference
+- **CSS Overridable**: All styles use specific classes without `!important`, easy to customize from themes
+
+### Hyvä Theme Support
+
+The module includes a sub-module `Rollpix_ImageFlipHoverHyvaCompat` that provides full Hyvä compatibility:
+- Replaces jQuery/RequireJS JS with vanilla JavaScript
+- Same features as Luma: flip, slider, all navigation types, all indicators
+- PHP plugins work identically (data-attributes injected into Image block HTML)
+- CSS is theme-agnostic (works in both Luma and Hyvä)
+- Enable with: `bin/magento module:enable Rollpix_ImageFlipHoverHyvaCompat`
 
 ## Requirements
 

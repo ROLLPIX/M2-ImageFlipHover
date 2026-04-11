@@ -1,8 +1,13 @@
-# Manual de Usuario — Rollpix Image Flip Hover
+# Manual de Usuario — Rollpix Image Flip Hover v2.0
 
 ## Que hace este modulo?
 
-Muestra una imagen alternativa del producto al pasar el mouse sobre la imagen principal en listados de categoria, widgets, sliders, bloques CMS y Page Builder. Permite configurar que imagen mostrar (un rol especifico o la segunda imagen de la galeria) y elegir entre distintos tipos de animacion.
+Permite ver las imagenes del producto directamente desde el listado (PLP) sin entrar a la ficha de producto. Tiene dos modos:
+
+- **Modo Flip (clasico):** muestra una imagen alternativa al pasar el mouse
+- **Modo Slider (nuevo en v2.0):** permite navegar todas las imagenes de la galeria con flechas, mouse tracking, swipe en mobile, y distintos indicadores de posicion
+
+Compatible con temas Luma y Hyva.
 
 ## Instalacion
 
@@ -38,12 +43,45 @@ Ir a **Tiendas > Configuracion > ROLLPIX > Image Flip Hover**.
 
 | Campo | Tipo | Descripcion | Valor por defecto |
 |-------|------|-------------|-------------------|
-| Habilitar Cambio de Imagen | Si/No | Activa o desactiva toda la funcionalidad del modulo | Si |
-| Rol de Imagen Principal | Dropdown | Rol de imagen a mostrar en hover. Puede ser cualquier rol nativo, custom, o "Segunda Imagen de Galeria" | Segunda Imagen de Galeria |
-| Rol de Imagen de Respaldo | Dropdown | Se usa si el producto no tiene imagen con el rol principal | Segunda Imagen de Galeria |
-| Tipo de Animacion | Dropdown | Tipo de transicion visual al hacer hover | Desvanecimiento (Fade) |
-| Velocidad de Animacion (ms) | Numero | Duracion de la animacion en milisegundos | 300 |
+| Habilitar | Si/No | Activa o desactiva toda la funcionalidad del modulo | Si |
+| Modo de Hover | Dropdown | **Flip** = una imagen alternativa. **Slider** = navegar toda la galeria | Flip |
+| Rol de Imagen Principal | Dropdown | (Solo modo Flip) Rol de imagen a mostrar en hover | Segunda Imagen de Galeria |
+| Rol de Imagen de Respaldo | Dropdown | (Solo modo Flip) Se usa si el producto no tiene imagen con el rol principal | Segunda Imagen de Galeria |
+| Tipo de Animacion | Dropdown | (Solo modo Flip) Tipo de transicion visual | Desvanecimiento (Fade) |
+| Velocidad de Animacion (ms) | Numero | (Solo modo Flip) Duracion de la animacion en milisegundos | 300 |
 | Solo Desktop | Si/No | Si esta habilitado, el efecto solo funciona en pantallas mayores a 768px | Si |
+
+### Configuracion del Slider
+
+Estos campos solo aparecen cuando el **Modo de Hover** es "Slider de galeria".
+
+**Comportamiento general:**
+
+| Campo | Tipo | Descripcion | Valor por defecto |
+|-------|------|-------------|-------------------|
+| Habilitar Hover Flip | Si/No | Al hacer hover, avanza automaticamente a la segunda imagen | Si |
+| Tipo de Transicion | Dropdown | Efecto al cambiar de imagen: Fundido (Fade), Deslizamiento lateral (Slide), Instantaneo | Fade |
+| Velocidad de Transicion (ms) | Numero | Duracion de la transicion en milisegundos | 250 |
+| Maximo de Imagenes | Numero | Cantidad maxima de imagenes por producto (2-20) | 8 |
+| Imagenes por Variante | Numero | Para configurables: maximo de imagenes de cada hijo/variante. 0 = todas | 0 |
+| Navegacion Circular | Si/No | Permite navegar de la ultima imagen a la primera y viceversa | No |
+| Volver a Imagen Principal | Si/No | Al quitar el mouse, vuelve automaticamente a la primera imagen | Si |
+
+**Configuracion Desktop:**
+
+| Campo | Tipo | Descripcion | Valor por defecto |
+|-------|------|-------------|-------------------|
+| Navegacion Desktop | Multiselect | Metodos de navegacion: Flechas, Seguimiento de mouse, Click en indicadores | Flechas |
+| Indicador Desktop | Dropdown | Tipo de indicador: Barras proporcionales, Puntos, Pills, Contador (1/5), Ninguno | Barras |
+| Posicion del Indicador Desktop | Dropdown | Sobre la imagen (arriba), Sobre la imagen (abajo), Debajo de la imagen | Arriba |
+
+**Configuracion Mobile:**
+
+| Campo | Tipo | Descripcion | Valor por defecto |
+|-------|------|-------------|-------------------|
+| Navegacion Mobile | Multiselect | Metodos de navegacion: Flechas, Deslizar (Tactil), Click en indicadores | Swipe |
+| Indicador Mobile | Dropdown | Tipo de indicador: Barras proporcionales, Puntos, Pills, Contador (1/5), Ninguno | Barras |
+| Posicion del Indicador Mobile | Dropdown | Sobre la imagen (arriba), Sobre la imagen (abajo), Debajo de la imagen | Arriba |
 
 ### Ubicaciones Habilitadas
 
@@ -146,7 +184,7 @@ Verificar que el producto configurable padre tenga imagenes propias en su galeri
 
 ### El modulo es compatible con Hyva Theme?
 
-No testeado con Hyva. El modulo esta disenado para temas basados en Luma/Blank que usan RequireJS y jQuery.
+Si. El modulo incluye un sub-modulo de compatibilidad (`Rollpix_ImageFlipHoverHyvaCompat`) que reemplaza el JS de Luma (jQuery/RequireJS) con vanilla JS para Hyva. Se instala automaticamente si Hyva esta presente. Soporta todas las funciones: flip, slider, flechas, indicadores, swipe mobile.
 
 ## Solucion de problemas
 

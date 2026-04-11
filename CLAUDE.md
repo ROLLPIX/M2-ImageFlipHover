@@ -206,9 +206,9 @@ Managed via `docker compose` with Mark Shust's docker-magento setup.
 
 **Access:**
 - **Storefront:** `https://magento.test` (self-signed SSL, add to hosts: `127.0.0.1 magento.test`)
-- **Admin:** `https://magento.test/admin` — user: `john.smith` / pass: `password123`
-- **PhpMyAdmin:** `http://localhost:8080` — user: `magento` / pass: `magento`
-- **DB:** host=db, database=magento, user=magento, pass=magento
+- **Admin:** `https://magento.test/admin` — credentials in `env/magento.env`
+- **PhpMyAdmin:** `http://localhost:8080` — credentials in `env/db.env`
+- **DB:** credentials in `env/db.env`
 
 **Themes installed:**
 - `Magento/luma` (theme_id=3) — Luma standard
