@@ -69,7 +69,7 @@ $configJson = $viewModel->getConfigJson();
         if (images.length < 2) return;
 
         var deviceCfg = isTouchDevice ? cfg.mobile : cfg.desktop;
-        var showControls = images.length > 2;
+        var showControls = isTouchDevice ? true : images.length > 2;
 
         var state = {
             el: container,
@@ -105,7 +105,7 @@ $configJson = $viewModel->getConfigJson();
     }
 
     // =============================================
-    // TRACK (created on first hover)
+    // SLIDES (created on first hover)
     // =============================================
     function ensureSlidesCreated(state) {
         if (state.slidesCreated) return;
@@ -118,31 +118,48 @@ $configJson = $viewModel->getConfigJson();
         var vpHeight = vp.offsetHeight;
         var count = state.images.length;
         var speed = state.cfg.speed || 250;
+        var transition = state.cfg.transition || 'fade';
 
-        var track = document.createElement('span');
-        track.className = 'hover-slider-track';
-        track.style.cssText = 'display:flex;width:' + (vpWidth * count) + 'px;height:' + vpHeight + 'px;transition:transform ' + speed + 'ms ease-out';
+        var baseStyle = 'width:' + vpWidth + 'px;height:' + vpHeight + 'px;object-fit:contain;position:static';
 
-        var imgStyle = 'flex:none;width:' + vpWidth + 'px;height:' + vpHeight + 'px;object-fit:contain;position:static';
+        if (transition === 'slide') {
+            // TRACK: flex row
+            var track = document.createElement('span');
+            track.className = 'hover-slider-track';
+            track.style.cssText = 'display:flex;width:' + (vpWidth * count) + 'px;height:' + vpHeight + 'px;transition:transform ' + speed + 'ms ease-out';
 
-        if (baseImg) {
-            baseImg.style.cssText += ';' + imgStyle;
-            track.appendChild(baseImg);
-            state.slides.push(baseImg);
+            if (baseImg) {
+                baseImg.style.cssText += ';' + baseStyle + ';flex:none';
+                track.appendChild(baseImg);
+                state.slides.push(baseImg);
+            }
+            for (var i = 1; i < count; i++) {
+                var slide = document.createElement('img');
+                slide.src = state.images[i]; slide.alt = alt;
+                slide.style.cssText = baseStyle + ';flex:none';
+                track.appendChild(slide);
+                state.slides.push(slide);
+            }
+            vp.innerHTML = '';
+            vp.appendChild(track);
+            state.track = track;
+        } else {
+            // STACKED: base in flow, overlays absolute (fade/instant)
+            if (baseImg) {
+                baseImg.style.cssText += ';' + baseStyle;
+                state.slides.push(baseImg);
+            }
+            var transStyle = transition === 'fade' ? ';transition:opacity ' + speed + 'ms ease' : '';
+            for (var j = 1; j < count; j++) {
+                var overlay = document.createElement('img');
+                overlay.className = 'hover-slider-overlay';
+                overlay.src = state.images[j]; overlay.alt = alt;
+                overlay.style.cssText = 'position:absolute;top:0;left:0;' + baseStyle.replace('position:static','') + ';opacity:0;pointer-events:none' + transStyle;
+                vp.appendChild(overlay);
+                state.slides.push(overlay);
+            }
+            state.useOverlay = true;
         }
-
-        for (var i = 1; i < count; i++) {
-            var slide = document.createElement('img');
-            slide.src = state.images[i];
-            slide.alt = alt;
-            slide.style.cssText = imgStyle;
-            track.appendChild(slide);
-            state.slides.push(slide);
-        }
-
-        vp.innerHTML = '';
-        vp.appendChild(track);
-        state.track = track;
     }
 
     function goToSlide(state, index) {
@@ -154,8 +171,17 @@ $configJson = $viewModel->getConfigJson();
         ensureSlidesCreated(state);
         state.currentIndex = index;
 
-        var vpWidth = state.viewport.offsetWidth;
-        state.track.style.transform = 'translateX(-' + (index * vpWidth) + 'px)';
+        if (state.useOverlay) {
+            var overlays = state.viewport.querySelectorAll('.hover-slider-overlay');
+            overlays.forEach(function(o) { o.style.opacity = '0'; o.style.pointerEvents = 'none'; });
+            if (index > 0 && state.slides[index]) {
+                state.slides[index].style.opacity = '1';
+                state.slides[index].style.pointerEvents = 'auto';
+            }
+        } else {
+            var vpWidth = state.viewport.offsetWidth;
+            state.track.style.transform = 'translateX(-' + (index * vpWidth) + 'px)';
+        }
 
         updateIndicators(state);
         updateArrows(state);

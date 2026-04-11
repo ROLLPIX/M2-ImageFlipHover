@@ -207,11 +207,27 @@
 /* Mouse tracking */
 .has-hover-slider.nav-mouse-tracking:hover { cursor: col-resize; }
 
-/* Mobile */
+/* Mobile: no hover available, so indicators always visible and arrows shown if configured */
 @media (hover: none), (max-width: 767px) {
-    .hover-slider-arrow { display: none; }
-    .has-hover-slider.show-arrows-mobile .hover-slider-arrow {
-        display: flex; opacity: 1; pointer-events: auto;
+    /* Arrows: visible and always shown (JS only creates them if configured for mobile) */
+    .hover-slider-arrow {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Disabled arrow: dimmed */
+    .hover-slider-arrow.disabled {
+        opacity: 0.25 !important;
+    }
+
+    /* Indicators: always visible */
+    .hover-slider-indicators {
+        opacity: 1 !important;
+    }
+
+    /* Counter: always visible */
+    .hover-slider-counter {
+        opacity: 1 !important;
     }
 }
 

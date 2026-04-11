@@ -45,7 +45,9 @@ define([
             if (images.length < 2) return;
 
             var deviceCfg = isTouchDevice ? cfg.mobile : cfg.desktop;
-            var showControls = images.length > 2;
+            // Desktop: controls only for 3+ images (2 images = hover flip only)
+            // Mobile: controls always for 2+ images (no hover available)
+            var showControls = isTouchDevice ? true : images.length > 2;
 
             var state = {
                 $container: $container,
@@ -66,7 +68,6 @@ define([
                 img.src = images[i];
             }
 
-            // Controls only for 3+ images
             if (showControls) {
                 if (deviceCfg.nav && deviceCfg.nav.indexOf('arrows') !== -1) createArrows(state);
                 if (deviceCfg.nav && deviceCfg.nav.indexOf('mouse_tracking') !== -1 && !isTouchDevice) {
@@ -95,28 +96,52 @@ define([
             var vpHeight = $viewport[0].offsetHeight;
             var count = state.images.length;
             var speed = state.cfg.speed || 250;
+            var transition = state.cfg.transition || 'fade';
 
-            var $track = $('<span class="hover-slider-track"></span>').css({
-                display: 'flex',
-                width: (vpWidth * count) + 'px',
-                height: vpHeight + 'px',
-                transition: 'transform ' + speed + 'ms ease-out'
-            });
+            var baseCss = { width: vpWidth + 'px', height: vpHeight + 'px', objectFit: 'contain', position: 'static' };
 
-            // position:static overrides Luma's .product-image-photo { position: absolute }
-            var imgCss = { flex: 'none', width: vpWidth + 'px', height: vpHeight + 'px', objectFit: 'contain', position: 'static' };
-            $baseImg.css(imgCss);
-            $track.append($baseImg);
-            state.$slides.push($baseImg);
+            if (transition === 'slide') {
+                // TRACK: flex row, translateX scrolls
+                var $track = $('<span class="hover-slider-track"></span>').css({
+                    display: 'flex',
+                    width: (vpWidth * count) + 'px',
+                    height: vpHeight + 'px',
+                    transition: 'transform ' + speed + 'ms ease-out'
+                });
 
-            for (var i = 1; i < count; i++) {
-                var $slide = $('<img/>').attr('src', state.images[i]).attr('alt', alt).css(imgCss);
-                $track.append($slide);
-                state.$slides.push($slide);
+                $baseImg.css($.extend({}, baseCss, { flex: 'none' }));
+                $track.append($baseImg);
+                state.$slides.push($baseImg);
+
+                for (var i = 1; i < count; i++) {
+                    var $slide = $('<img/>').attr('src', state.images[i]).attr('alt', alt)
+                        .css($.extend({}, baseCss, { flex: 'none' }));
+                    $track.append($slide);
+                    state.$slides.push($slide);
+                }
+
+                $viewport.empty().append($track);
+                state.$track = $track;
+            } else {
+                // STACKED: base in flow, overlays absolute on top (fade/instant)
+                $baseImg.css(baseCss).addClass('hover-slider-base');
+                state.$slides.push($baseImg);
+
+                for (var j = 1; j < count; j++) {
+                    var overlayCss = $.extend({}, baseCss, {
+                        position: 'absolute', top: 0, left: 0,
+                        opacity: 0, pointerEvents: 'none'
+                    });
+                    if (transition === 'fade') {
+                        overlayCss.transition = 'opacity ' + speed + 'ms ease';
+                    }
+                    var $overlay = $('<img class="hover-slider-overlay"/>').attr('src', state.images[j]).attr('alt', alt)
+                        .css(overlayCss);
+                    $viewport.append($overlay);
+                    state.$slides.push($overlay);
+                }
+                state.useOverlay = true;
             }
-
-            $viewport.empty().append($track);
-            state.$track = $track;
         }
 
         function goToSlide(state, index) {
@@ -131,8 +156,17 @@ define([
             ensureSlidesCreated(state);
             state.currentIndex = index;
 
-            var vpWidth = state.$viewport[0].offsetWidth;
-            state.$track.css('transform', 'translateX(-' + (index * vpWidth) + 'px)');
+            if (state.useOverlay) {
+                // Fade/instant: toggle overlay opacity
+                state.$viewport.find('.hover-slider-overlay').css({ opacity: 0, pointerEvents: 'none' });
+                if (index > 0 && state.$slides[index]) {
+                    state.$slides[index].css({ opacity: 1, pointerEvents: 'auto' });
+                }
+            } else {
+                // Slide: move track
+                var vpWidth = state.$viewport[0].offsetWidth;
+                state.$track.css('transform', 'translateX(-' + (index * vpWidth) + 'px)');
+            }
 
             updateIndicators(state);
             updateArrows(state);
