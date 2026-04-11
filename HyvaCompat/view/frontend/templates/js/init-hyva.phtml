@@ -70,7 +70,8 @@ $configJson = $viewModel->getConfigJson();
         if (images.length < 2) return;
 
         var deviceCfg = isTouchDevice ? cfg.mobile : cfg.desktop;
-        var showControls = isTouchDevice ? true : images.length > 2;
+        var isFlipOnDesktop = config.mode === 'flip' && !isTouchDevice;
+        var showControls = isFlipOnDesktop ? false : (isTouchDevice ? true : images.length > 2);
 
         var state = {
             el: container,
@@ -102,6 +103,7 @@ $configJson = $viewModel->getConfigJson();
             createIndicators(state);
         }
 
+        state.isFlipOnDesktop = isFlipOnDesktop;
         bindHoverEvents(state);
     }
 
@@ -165,7 +167,8 @@ $configJson = $viewModel->getConfigJson();
 
     function goToSlide(state, index) {
         var count = state.images.length;
-        if (state.cfg.loop) { index = ((index % count) + count) % count; }
+        if (state.isFlipOnDesktop) { index = Math.max(0, Math.min(1, index)); }
+        else if (state.cfg.loop) { index = ((index % count) + count) % count; }
         else { index = Math.max(0, Math.min(count - 1, index)); }
         if (index === state.currentIndex && state.slidesCreated) return;
 
@@ -192,11 +195,15 @@ $configJson = $viewModel->getConfigJson();
     // HOVER
     // =============================================
     function bindHoverEvents(state) {
+        state.lastInteraction = 0;
+
         state.el.addEventListener('mouseenter', function() {
             if (state.cfg.hoverFlip && state.currentIndex === 0) goToSlide(state, 1);
         });
         state.el.addEventListener('mouseleave', function() {
-            if (state.cfg.autoReturn) goToSlide(state, 0);
+            if (Date.now() - state.lastInteraction > 500) {
+                goToSlide(state, 0);
+            }
         });
     }
 
@@ -217,8 +224,8 @@ $configJson = $viewModel->getConfigJson();
         next.type = 'button';
         next.innerHTML = nextSvg;
 
-        prev.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, state.currentIndex - 1); });
-        next.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, state.currentIndex + 1); });
+        prev.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); state.lastInteraction = Date.now(); goToSlide(state, state.currentIndex - 1); });
+        next.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); state.lastInteraction = Date.now(); goToSlide(state, state.currentIndex + 1); });
 
         state.el.appendChild(prev);
         state.el.appendChild(next);
@@ -303,6 +310,7 @@ $configJson = $viewModel->getConfigJson();
             if (t) {
                 e.preventDefault();
                 e.stopPropagation();
+                state.lastInteraction = Date.now();
                 goToSlide(state, parseInt(t.dataset.index, 10));
             }
         });

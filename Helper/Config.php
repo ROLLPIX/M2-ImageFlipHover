@@ -30,7 +30,6 @@ class Config extends AbstractHelper
     private const XML_PATH_MAX_IMAGES = 'rollpix_imageflip/hover_slider/max_images';
     private const XML_PATH_CONFIGURABLE_IMAGES_PER_CHILD = 'rollpix_imageflip/hover_slider/configurable_images_per_child';
     private const XML_PATH_LOOP = 'rollpix_imageflip/hover_slider/loop';
-    private const XML_PATH_AUTO_RETURN = 'rollpix_imageflip/hover_slider/auto_return';
 
     // Desktop
     private const XML_PATH_DESKTOP_ENABLED = 'rollpix_imageflip/desktop/enabled';
@@ -373,14 +372,6 @@ class Config extends AbstractHelper
      * @param int|null $storeId
      * @return bool
      */
-    public function isAutoReturnEnabled(?int $storeId = null): bool
-    {
-        return $this->scopeConfig->isSetFlag(
-            self::XML_PATH_AUTO_RETURN,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
-    }
 
     /**
      * @param int|null $storeId
@@ -491,7 +482,6 @@ class Config extends AbstractHelper
         $config['transitionSpeed'] = $this->isFlipMode($storeId) ? $this->getAnimationSpeed($storeId) : $this->getTransitionSpeed($storeId);
         $config['maxImages'] = $this->getMaxImages($storeId);
         $config['loop'] = $this->isLoopEnabled($storeId);
-        $config['autoReturn'] = true;
 
         $config['desktop'] = [
             'navigation' => $this->getDesktopNavigation($storeId),

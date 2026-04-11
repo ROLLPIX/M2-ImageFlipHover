@@ -125,12 +125,12 @@ class ImagePlugin
      */
     private function buildSliderConfig(): array
     {
+        $isFlip = $this->config->isFlipMode();
         return [
-            'hoverFlip' => $this->config->isHoverFlipEnabled(),
-            'transition' => $this->config->getTransitionType(),
-            'speed' => $this->config->getTransitionSpeed(),
-            'loop' => $this->config->isLoopEnabled(),
-            'autoReturn' => $this->config->isAutoReturnEnabled(),
+            'hoverFlip' => $isFlip ? true : $this->config->isHoverFlipEnabled(),
+            'transition' => $isFlip ? 'fade' : $this->config->getTransitionType(),
+            'speed' => $isFlip ? $this->config->getAnimationSpeed() : $this->config->getTransitionSpeed(),
+            'loop' => $isFlip ? false : $this->config->isLoopEnabled(),
             'desktop' => [
                 'nav' => $this->config->getDesktopNavigation(),
                 'indicator' => $this->config->getDesktopIndicator(),

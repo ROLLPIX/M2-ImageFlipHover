@@ -49,9 +49,12 @@ define([
             if (images.length < 2) return;
 
             var deviceCfg = isTouchDevice ? cfg.mobile : cfg.desktop;
-            // Desktop: controls only for 3+ images (2 images = hover flip only)
-            // Mobile: controls always for 2+ images (no hover available)
-            var showControls = isTouchDevice ? true : images.length > 2;
+            var isFlipOnDesktop = config.mode === 'flip' && !isTouchDevice;
+
+            // Flip on desktop: never show controls, only hover flip
+            // Slider on desktop: controls for 3+ images
+            // Mobile (any mode): always show controls (no hover available)
+            var showControls = isFlipOnDesktop ? false : (isTouchDevice ? true : images.length > 2);
 
             var state = {
                 $container: $container,
@@ -81,6 +84,9 @@ define([
                 if (deviceCfg.nav && deviceCfg.nav.indexOf('swipe') !== -1) initSwipe(state);
                 createIndicators(state);
             }
+
+            // Flip on desktop: only allow hover between image 0 and 1
+            state.isFlipOnDesktop = isFlipOnDesktop;
 
             bindHoverEvents(state);
         }
@@ -150,7 +156,11 @@ define([
 
         function goToSlide(state, index) {
             var count = state.images.length;
-            if (state.cfg.loop) {
+
+            // Flip on desktop: restrict to image 0 and 1 only
+            if (state.isFlipOnDesktop) {
+                index = Math.max(0, Math.min(1, index));
+            } else if (state.cfg.loop) {
                 index = ((index % count) + count) % count;
             } else {
                 index = Math.max(0, Math.min(count - 1, index));
@@ -181,11 +191,16 @@ define([
         // =============================================
 
         function bindHoverEvents(state) {
+            state.lastInteraction = 0;
+
             state.$container.on('mouseenter.hoverSlider', function () {
                 if (state.cfg.hoverFlip && state.currentIndex === 0) goToSlide(state, 1);
             });
             state.$container.on('mouseleave.hoverSlider', function () {
-                if (state.cfg.autoReturn) goToSlide(state, 0);
+                // Skip if user clicked arrow/dot within last 500ms (prevents accidental return)
+                if (Date.now() - state.lastInteraction > 500) {
+                    goToSlide(state, 0);
+                }
             });
         }
 
@@ -200,8 +215,8 @@ define([
             var $prev = $('<button class="hover-slider-arrow hover-slider-arrow--prev" type="button">' + prevSvg + '</button>');
             var $next = $('<button class="hover-slider-arrow hover-slider-arrow--next" type="button">' + nextSvg + '</button>');
 
-            $prev.on('click.hoverSlider', function (e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, state.currentIndex - 1); });
-            $next.on('click.hoverSlider', function (e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, state.currentIndex + 1); });
+            $prev.on('click.hoverSlider', function (e) { e.preventDefault(); e.stopPropagation(); state.lastInteraction = Date.now(); goToSlide(state, state.currentIndex - 1); });
+            $next.on('click.hoverSlider', function (e) { e.preventDefault(); e.stopPropagation(); state.lastInteraction = Date.now(); goToSlide(state, state.currentIndex + 1); });
 
             state.$container.append($prev).append($next);
             state.$arrows = { $prev: $prev, $next: $next };
@@ -281,7 +296,7 @@ define([
                 $w.append($item);
             }
 
-            if (clickable) $w.on('click', '.clickable', function (e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, $(this).data('index')); });
+            if (clickable) $w.on('click', '.clickable', function (e) { e.preventDefault(); e.stopPropagation(); state.lastInteraction = Date.now(); goToSlide(state, $(this).data('index')); });
             state.$container.append($w);
             state.$indicators = $w;
         }

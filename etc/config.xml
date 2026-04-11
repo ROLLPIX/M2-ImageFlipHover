@@ -26,7 +26,6 @@
                 <max_images>8</max_images>
                 <configurable_images_per_child>0</configurable_images_per_child>
                 <loop>0</loop>
-                <auto_return>1</auto_return>
             </hover_slider>
             <desktop>
                 <enabled>1</enabled>
