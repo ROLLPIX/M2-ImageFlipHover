@@ -3,33 +3,16 @@
  * @author Rollpix
  * @package Rollpix_ImageFlipHoverHyvaCompat
  *
- * Vanilla JS initialization for Hyvä themes (no jQuery, no RequireJS)
- *
- * In Hyvä, the Image block plugins (afterToHtml) don't fire because Hyvä
- * renders product images with its own template, not via Magento\Catalog\Block\Product\Image.
- *
- * Strategy: The JS detects product images by their class (.product-image-photo),
- * wraps them with slider/flip containers, and fetches gallery data from a pre-rendered
- * JSON block or from the ViewModel.
- *
- * @var \Magento\Framework\View\Element\Template $block
- * @var \Magento\Framework\Escaper $escaper
- * @var \Rollpix\ImageFlipHover\ViewModel\ImageFlip $viewModel
+ * Vanilla JS (no jQuery) — port of hover-slider.js for Hyvä themes.
+ * Same logic: track approach for all transitions, overlays removed.
  */
-
 $viewModel = $block->getData('view_model');
-
-if (!$viewModel->isEnabled()) {
-    return;
-}
-
+if (!$viewModel || !$viewModel->isEnabled()) { return; }
 $configJson = $viewModel->getConfigJson();
-$mode = $viewModel->getMode();
 ?>
 <script>
 (function() {
     'use strict';
-
     var config = <?= /* @noEscape */ $configJson ?>;
     if (!config.enabled) return;
 
@@ -41,64 +24,42 @@ $mode = $viewModel->getMode();
         return window.innerWidth >= 768;
     }
 
-    // =============================================
-    // HYVÄ IMAGE DETECTION
-    // =============================================
-    // In Hyvä, product images on PLP don't have data-flip-image or data-hover-slider
-    // attributes because the PHP plugins on Image block don't fire.
-    // We detect images by .product-image-photo inside product items and
-    // use the ViewModel to provide gallery data via a REST/GraphQL call or
-    // we fall back to the Luma data-attributes if they exist (for pages where
-    // the Image block IS used, like widgets).
-
-    // For Hyvä PLP: images are rendered inline with x-data="initProductItemImage"
-    // and each product item has a product ID available.
-    // Strategy: We look for [data-flip-image] and [data-hover-slider] first (Luma path).
-    // If none found, we look for Hyvä product images and enhance them client-side.
+    function initAll() {
+        if (config.mode === 'slider') initSliders();
+        else initFlipImages();
+    }
 
     // =============================================
-    // FLIP MODE (works with both Luma data-attrs and Hyvä images)
+    // FLIP MODE (existing behavior)
     // =============================================
-
     function initFlipImages() {
         if (!shouldEnable()) return;
-
-        // Luma path: data-attributes already present
-        var containers = document.querySelectorAll('[data-flip-image="true"]:not(.flip-initialized)');
-        containers.forEach(function(container) {
-            container.classList.add('flip-initialized');
-            var flipImg = container.querySelector('.flip-image');
-            var flipUrl = container.dataset.flipUrl;
-
+        document.querySelectorAll('[data-flip-image="true"]:not(.flip-initialized)').forEach(function(el) {
+            el.classList.add('flip-initialized');
+            var flipImg = el.querySelector('.flip-image');
+            var flipUrl = el.dataset.flipUrl;
             if (flipImg && flipUrl && !flipImg.src) {
-                container.addEventListener('mouseenter', function onFirstEnter() {
-                    flipImg.src = flipUrl;
-                    container.removeEventListener('mouseenter', onFirstEnter);
-                });
+                el.addEventListener('mouseenter', function f() { flipImg.src = flipUrl; el.removeEventListener('mouseenter', f); });
             }
-            container.addEventListener('mouseenter', function() {
+            el.addEventListener('mouseenter', function() {
                 if (flipImg && flipUrl && !flipImg.src) flipImg.src = flipUrl;
-                container.classList.add('is-flipped');
+                el.classList.add('is-flipped');
             });
-            container.addEventListener('mouseleave', function() {
-                container.classList.remove('is-flipped');
-            });
+            el.addEventListener('mouseleave', function() { el.classList.remove('is-flipped'); });
         });
     }
 
     // =============================================
     // SLIDER MODE
     // =============================================
-
     function initSliders() {
         if (!shouldEnable()) return;
-
-        // Luma path: containers already have data-hover-slider from PHP plugin
-        var containers = document.querySelectorAll('[data-hover-slider="true"]:not(.slider-initialized)');
-        containers.forEach(function(el) { createSliderInstance(el); });
+        document.querySelectorAll('[data-hover-slider="true"]:not(.slider-initialized)').forEach(function(el) {
+            createSlider(el);
+        });
     }
 
-    function createSliderInstance(container) {
+    function createSlider(container) {
         var galleryData = container.dataset.gallery;
         var sliderConfigData = container.dataset.sliderConfig;
         if (!galleryData || !sliderConfigData) return;
@@ -108,6 +69,7 @@ $mode = $viewModel->getMode();
         if (images.length < 2) return;
 
         var deviceCfg = isTouchDevice ? cfg.mobile : cfg.desktop;
+        var showControls = images.length > 2;
 
         var state = {
             el: container,
@@ -116,112 +78,92 @@ $mode = $viewModel->getMode();
             currentIndex: 0,
             cfg: cfg,
             deviceCfg: deviceCfg,
-            transition: cfg.transition || 'fade',
             slides: [],
-            indicators: null,
-            counter: null,
-            arrows: null,
+            track: null,
             slidesCreated: false,
-            imagesLoaded: [true]
+            arrows: null,
+            indicators: null,
+            counter: null
         };
 
         container.classList.add('slider-initialized');
 
-        if (deviceCfg.nav && deviceCfg.nav.indexOf('arrows') !== -1) createArrows(state);
-        if (deviceCfg.nav && deviceCfg.nav.indexOf('mouse_tracking') !== -1 && !isTouchDevice) {
-            container.classList.add('nav-mouse-tracking');
-            initMouseTracking(state);
+        // Preload all images
+        for (var i = 1; i < images.length; i++) { var img = new Image(); img.src = images[i]; }
+
+        if (showControls) {
+            if (deviceCfg.nav && deviceCfg.nav.indexOf('arrows') !== -1) createArrows(state);
+            if (deviceCfg.nav && deviceCfg.nav.indexOf('mouse_tracking') !== -1 && !isTouchDevice) {
+                container.classList.add('nav-mouse-tracking');
+                initMouseTracking(state);
+            }
+            if (deviceCfg.nav && deviceCfg.nav.indexOf('swipe') !== -1) initSwipe(state);
+            createIndicators(state);
         }
-        createIndicators(state);
+
         bindHoverEvents(state);
-        if (deviceCfg.nav && deviceCfg.nav.indexOf('swipe') !== -1) initSwipe(state);
     }
 
+    // =============================================
+    // TRACK (created on first hover)
+    // =============================================
     function ensureSlidesCreated(state) {
         if (state.slidesCreated) return;
         state.slidesCreated = true;
 
-        var viewport = state.viewport;
-        var existingImg = viewport.querySelector('.product-image-photo') || viewport.querySelector('img');
-        viewport.classList.add('transition-' + state.transition);
+        var vp = state.viewport;
+        var baseImg = vp.querySelector('img');
+        var alt = baseImg ? baseImg.alt || '' : '';
+        var vpWidth = vp.offsetWidth;
+        var vpHeight = vp.offsetHeight;
+        var count = state.images.length;
+        var speed = state.cfg.speed || 250;
 
-        if (state.transition === 'slide') {
-            var track = document.createElement('span');
-            track.className = 'hover-slider-track';
-            existingImg.classList.add('hover-slider-slide', 'active');
-            existingImg.parentNode.insertBefore(track, existingImg);
-            track.appendChild(existingImg);
-            state.slides.push(existingImg);
+        var track = document.createElement('span');
+        track.className = 'hover-slider-track';
+        track.style.cssText = 'display:flex;width:' + (vpWidth * count) + 'px;height:' + vpHeight + 'px;transition:transform ' + speed + 'ms ease-out';
 
-            for (var i = 1; i < state.images.length; i++) {
-                var slide = document.createElement('img');
-                slide.className = 'hover-slider-slide';
-                slide.loading = 'lazy';
-                slide.dataset.src = state.images[i];
-                slide.alt = existingImg.alt || '';
-                track.appendChild(slide);
-                state.slides.push(slide);
-                state.imagesLoaded.push(false);
-            }
-        } else {
-            existingImg.classList.add('hover-slider-slide', 'active');
-            state.slides.push(existingImg);
-            for (var j = 1; j < state.images.length; j++) {
-                var fadeSlide = document.createElement('img');
-                fadeSlide.className = 'hover-slider-slide';
-                fadeSlide.loading = 'lazy';
-                fadeSlide.dataset.src = state.images[j];
-                fadeSlide.alt = existingImg.alt || '';
-                viewport.appendChild(fadeSlide);
-                state.slides.push(fadeSlide);
-                state.imagesLoaded.push(false);
-            }
+        var imgStyle = 'flex:none;width:' + vpWidth + 'px;height:' + vpHeight + 'px;object-fit:contain;position:static';
+
+        if (baseImg) {
+            baseImg.style.cssText += ';' + imgStyle;
+            track.appendChild(baseImg);
+            state.slides.push(baseImg);
         }
+
+        for (var i = 1; i < count; i++) {
+            var slide = document.createElement('img');
+            slide.src = state.images[i];
+            slide.alt = alt;
+            slide.style.cssText = imgStyle;
+            track.appendChild(slide);
+            state.slides.push(slide);
+        }
+
+        vp.innerHTML = '';
+        vp.appendChild(track);
+        state.track = track;
     }
 
     function goToSlide(state, index) {
         var count = state.images.length;
-        if (state.cfg.loop) {
-            index = ((index % count) + count) % count;
-        } else {
-            index = Math.max(0, Math.min(count - 1, index));
-        }
+        if (state.cfg.loop) { index = ((index % count) + count) % count; }
+        else { index = Math.max(0, Math.min(count - 1, index)); }
         if (index === state.currentIndex && state.slidesCreated) return;
 
         ensureSlidesCreated(state);
-        preloadImage(state, index);
-
-        var prev = state.currentIndex;
         state.currentIndex = index;
 
-        if (state.transition === 'slide') {
-            var track = state.viewport.querySelector('.hover-slider-track');
-            if (track) track.style.transform = 'translateX(-' + (index * 100) + '%)';
-        }
-        if (state.slides[prev]) state.slides[prev].classList.remove('active');
-        if (state.slides[index]) state.slides[index].classList.add('active');
+        var vpWidth = state.viewport.offsetWidth;
+        state.track.style.transform = 'translateX(-' + (index * vpWidth) + 'px)';
 
         updateIndicators(state);
         updateArrows(state);
     }
 
-    function preloadImage(state, index) {
-        if (index < 0 || index >= state.images.length || state.imagesLoaded[index]) return;
-        var slide = state.slides[index];
-        if (slide && slide.dataset.src) {
-            slide.src = slide.dataset.src;
-            delete slide.dataset.src;
-            state.imagesLoaded[index] = true;
-        }
-        [index + 1, index - 1].forEach(function(adj) {
-            if (adj >= 0 && adj < state.images.length && !state.imagesLoaded[adj] && state.slides[adj] && state.slides[adj].dataset.src) {
-                state.slides[adj].src = state.slides[adj].dataset.src;
-                delete state.slides[adj].dataset.src;
-                state.imagesLoaded[adj] = true;
-            }
-        });
-    }
-
+    // =============================================
+    // HOVER
+    // =============================================
     function bindHoverEvents(state) {
         state.el.addEventListener('mouseenter', function() {
             if (state.cfg.hoverFlip && state.currentIndex === 0) goToSlide(state, 1);
@@ -231,28 +173,29 @@ $mode = $viewModel->getMode();
         });
     }
 
+    // =============================================
+    // ARROWS
+    // =============================================
     function createArrows(state) {
         var prevSvg = '<svg viewBox="0 0 24 24"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>';
         var nextSvg = '<svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
 
-        var prevBtn = document.createElement('button');
-        prevBtn.className = 'hover-slider-arrow hover-slider-arrow--prev';
-        prevBtn.type = 'button';
-        prevBtn.setAttribute('aria-label', 'Previous');
-        prevBtn.innerHTML = prevSvg;
+        var prev = document.createElement('button');
+        prev.className = 'hover-slider-arrow hover-slider-arrow--prev';
+        prev.type = 'button';
+        prev.innerHTML = prevSvg;
 
-        var nextBtn = document.createElement('button');
-        nextBtn.className = 'hover-slider-arrow hover-slider-arrow--next';
-        nextBtn.type = 'button';
-        nextBtn.setAttribute('aria-label', 'Next');
-        nextBtn.innerHTML = nextSvg;
+        var next = document.createElement('button');
+        next.className = 'hover-slider-arrow hover-slider-arrow--next';
+        next.type = 'button';
+        next.innerHTML = nextSvg;
 
-        prevBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, state.currentIndex - 1); });
-        nextBtn.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, state.currentIndex + 1); });
+        prev.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, state.currentIndex - 1); });
+        next.addEventListener('click', function(e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, state.currentIndex + 1); });
 
-        state.el.appendChild(prevBtn);
-        state.el.appendChild(nextBtn);
-        state.arrows = { prev: prevBtn, next: nextBtn };
+        state.el.appendChild(prev);
+        state.el.appendChild(next);
+        state.arrows = { prev: prev, next: next };
         updateArrows(state);
     }
 
@@ -262,6 +205,9 @@ $mode = $viewModel->getMode();
         state.arrows.next.classList.toggle('disabled', state.currentIndex === state.images.length - 1);
     }
 
+    // =============================================
+    // MOUSE TRACKING
+    // =============================================
     function initMouseTracking(state) {
         var rafId = null;
         state.el.addEventListener('mousemove', function(e) {
@@ -269,39 +215,42 @@ $mode = $viewModel->getMode();
             rafId = requestAnimationFrame(function() {
                 var rect = state.el.getBoundingClientRect();
                 var relativeX = (e.clientX - rect.left) / rect.width;
-                var targetIndex = Math.floor(relativeX * state.images.length);
-                targetIndex = Math.max(0, Math.min(state.images.length - 1, targetIndex));
-                goToSlide(state, targetIndex);
+                var idx = Math.min(state.images.length - 1, Math.max(0, Math.floor(relativeX * state.images.length)));
+                goToSlide(state, idx);
                 rafId = null;
             });
         });
     }
 
+    // =============================================
+    // SWIPE
+    // =============================================
     function initSwipe(state) {
-        var startX = 0, startY = 0, isDragging = false;
-        state.el.addEventListener('touchstart', function(e) {
-            startX = e.touches[0].clientX; startY = e.touches[0].clientY; isDragging = true;
-        }, { passive: true });
-        state.el.addEventListener('touchmove', function(e) {
-            if (!isDragging) return;
-            var dx = e.touches[0].clientX - startX, dy = e.touches[0].clientY - startY;
-            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) e.preventDefault();
+        var startX = 0, startY = 0, dragging = false;
+        var el = state.el;
+        el.addEventListener('touchstart', function(e) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; dragging = true; }, { passive: true });
+        el.addEventListener('touchmove', function(e) {
+            if (!dragging) return;
+            if (Math.abs(e.touches[0].clientX - startX) > Math.abs(e.touches[0].clientY - startY) && Math.abs(e.touches[0].clientX - startX) > 10) e.preventDefault();
         }, { passive: false });
-        state.el.addEventListener('touchend', function(e) {
-            if (!isDragging) return; isDragging = false;
+        el.addEventListener('touchend', function(e) {
+            if (!dragging) return; dragging = false;
             var dx = e.changedTouches[0].clientX - startX;
             if (Math.abs(dx) > 30) goToSlide(state, state.currentIndex + (dx < 0 ? 1 : -1));
         }, { passive: true });
     }
 
+    // =============================================
+    // INDICATORS
+    // =============================================
     function createIndicators(state) {
         var type = state.deviceCfg.indicator, pos = state.deviceCfg.indicatorPos;
         if (type === 'none') return;
 
         if (type === 'counter') {
-            var posClass = pos === 'top' ? 'hover-slider-counter--top' : 'hover-slider-counter--bottom';
+            var cls = pos === 'top' ? 'hover-slider-counter--top' : 'hover-slider-counter--bottom';
             var counter = document.createElement('span');
-            counter.className = 'hover-slider-counter ' + posClass;
+            counter.className = 'hover-slider-counter ' + cls;
             counter.textContent = '1/' + state.images.length;
             state.el.appendChild(counter);
             state.counter = counter;
@@ -310,7 +259,7 @@ $mode = $viewModel->getMode();
 
         var wrapper = document.createElement('span');
         wrapper.className = 'hover-slider-indicators indicator-' + type + ' hover-slider-indicators--' + pos;
-        var isClickable = state.deviceCfg.nav && state.deviceCfg.nav.indexOf('dots_click') !== -1;
+        var clickable = state.deviceCfg.nav && state.deviceCfg.nav.indexOf('dots_click') !== -1;
 
         for (var i = 0; i < state.images.length; i++) {
             var item = document.createElement('span');
@@ -318,16 +267,18 @@ $mode = $viewModel->getMode();
             else if (type === 'dots') { item.className = 'hover-slider-dot'; }
             else if (type === 'pills') { item.className = 'hover-slider-pill'; }
             if (i === 0) item.classList.add('active');
-            if (isClickable) { item.classList.add('clickable'); item.dataset.index = i; }
+            if (clickable) { item.classList.add('clickable'); item.dataset.index = i; }
             wrapper.appendChild(item);
         }
 
-        if (isClickable) {
-            wrapper.addEventListener('click', function(e) {
-                var target = e.target.closest('.clickable');
-                if (target) goToSlide(state, parseInt(target.dataset.index, 10));
-            });
-        }
+        if (clickable) wrapper.addEventListener('click', function(e) {
+            var t = e.target.closest('.clickable');
+            if (t) {
+                e.preventDefault();
+                e.stopPropagation();
+                goToSlide(state, parseInt(t.dataset.index, 10));
+            }
+        });
 
         state.el.appendChild(wrapper);
         state.indicators = wrapper;
@@ -335,8 +286,8 @@ $mode = $viewModel->getMode();
 
     function updateIndicators(state) {
         if (state.indicators) {
-            var children = state.indicators.children;
-            for (var i = 0; i < children.length; i++) children[i].classList.toggle('active', i === state.currentIndex);
+            var ch = state.indicators.children;
+            for (var i = 0; i < ch.length; i++) ch[i].classList.toggle('active', i === state.currentIndex);
         }
         if (state.counter) state.counter.textContent = (state.currentIndex + 1) + '/' + state.images.length;
     }
@@ -344,48 +295,25 @@ $mode = $viewModel->getMode();
     // =============================================
     // DYNAMIC CONTENT
     // =============================================
-
     function debouncedInit() {
         if (initTimeout) clearTimeout(initTimeout);
         initTimeout = setTimeout(initAll, 100);
     }
 
-    function initAll() {
-        if (config.mode === 'slider') initSliders();
-        else initFlipImages();
+    if (typeof MutationObserver !== 'undefined') {
+        new MutationObserver(function(muts) {
+            for (var i = 0; i < muts.length; i++) { if (muts[i].addedNodes.length) { debouncedInit(); return; } }
+        }).observe(document.body, { childList: true, subtree: true });
     }
-
-    function observeDynamicContent() {
-        if (typeof MutationObserver !== 'undefined') {
-            var observer = new MutationObserver(function(mutations) {
-                var shouldReinit = false;
-                mutations.forEach(function(m) {
-                    if (m.addedNodes.length) {
-                        m.addedNodes.forEach(function(node) {
-                            if (node.nodeType === 1 && node.querySelector && (
-                                node.querySelector('[data-flip-image="true"]:not(.flip-initialized)') ||
-                                node.querySelector('[data-hover-slider="true"]:not(.slider-initialized)')
-                            )) shouldReinit = true;
-                        });
-                    }
-                });
-                if (shouldReinit) debouncedInit();
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
-        }
-        window.addEventListener('contentUpdated', debouncedInit);
-        document.addEventListener('hyva-modal-shown', debouncedInit);
-    }
+    window.addEventListener('contentUpdated', debouncedInit);
 
     // =============================================
     // INIT
     // =============================================
-
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() { initAll(); observeDynamicContent(); });
+        document.addEventListener('DOMContentLoaded', function() { initAll(); });
     } else {
         initAll();
-        observeDynamicContent();
     }
 
     window.rollpixImageFlip = { init: initAll };

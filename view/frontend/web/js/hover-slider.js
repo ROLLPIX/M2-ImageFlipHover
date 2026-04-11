@@ -243,7 +243,7 @@ define([
                 $w.append($item);
             }
 
-            if (clickable) $w.on('click', '.clickable', function () { goToSlide(state, $(this).data('index')); });
+            if (clickable) $w.on('click', '.clickable', function (e) { e.preventDefault(); e.stopPropagation(); goToSlide(state, $(this).data('index')); });
             state.$container.append($w);
             state.$indicators = $w;
         }

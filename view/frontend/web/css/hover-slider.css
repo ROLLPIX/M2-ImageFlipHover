@@ -30,12 +30,21 @@
     bottom: 0;
 }
 
-/* Hyvä: viewport in flow */
+/* Hyvä: fill the parent <a> which has aspect-ratio + overflow:hidden */
+.has-hover-slider:not(.product-image-container) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
 .has-hover-slider:not(.product-image-container) .hover-slider-viewport {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
     display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    clip-path: inset(0);
 }
 
 /* Server-rendered image — fills viewport, stays in flow */
