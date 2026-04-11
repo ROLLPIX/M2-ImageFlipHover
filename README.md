@@ -1,452 +1,215 @@
-# Rollpix Image Flip Hover for Magento 2
+# Rollpix Image Flip & Hover Slider for Magento 2
 
-Browse product gallery images directly from the product listing page (PLP). Two modes: **Flip** (single alternate image on hover) and **Slider** (navigate all images with arrows, swipe, mouse tracking). Compatible with Luma and Hyvä themes.
+**Sponsor: [www.rollpix.com](https://www.rollpix.com)**
+
+> **[Leer en Español](README_es.md)**
+
+---
+
+## Overview
+
+Browse product gallery images directly from the product listing page (PLP) without entering the product detail page. Two modes:
+
+- **Flip** (classic): shows a single alternate image on hover
+- **Slider** (v2.0): navigate all gallery images with arrows, swipe, mouse tracking, and click-on-indicator navigation
+
+Compatible with **Luma** and **Hyvä** themes.
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Technical Requirements](#technical-requirements)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Configurable Products](#configurable-products)
+- [Hyvä Theme Support](#hyvä-theme-support)
+- [Troubleshooting](#troubleshooting)
+- [Changelog](#changelog)
+- [License](#license)
+
+---
 
 ## Features
 
-### Flip Mode (classic)
-- **Configurable Image Roles**: Select any image role (native or custom) for the hover image
-- **Second Gallery Image Option**: Use the second image in the product gallery as flip image
-- **Fallback Support**: Configure a fallback image role when the primary role is not set
-- **Multiple Animation Types**: Fade, Slide, Zoom, and 3D Flip animations
+### Flip Mode
+- Configurable image roles (native or custom) for the hover image
+- "Second Gallery Image" option (no role assignment needed)
+- Fallback role support
+- 8 animation types: Fade, Slide (4 directions), Zoom, Flip Horizontal/Vertical
 
 ### Slider Mode (v2.0)
-- **Full Gallery Navigation**: Browse all product images from PLP without entering product page
-- **Navigation Methods**: Arrows, Mouse Tracking (desktop), Swipe (mobile), Click on Indicators
-- **Indicator Types**: Proportional Bars, Dots, Pills (elongated active), Counter (1/5), None
-- **Transition Effects**: Slide (carousel), Fade (crossfade), Instant
-- **Independent Desktop/Mobile Config**: Different navigation and indicators per device
-- **Hover Flip Integration**: Optionally auto-advance to image 2 on hover
-- **Configurable Products**: Collect images from all children, with "images per variant" limit (e.g., 1 photo per color)
-- **ConfigurableGallery Integration**: Filter parent images by variant when Rollpix_ConfigurableGallery is installed
+- Full gallery navigation from PLP
+- **Navigation**: Arrows, Mouse Tracking (desktop), Swipe (mobile), Click on Indicators
+- **Indicators**: Proportional Bars, Dots, Pills (elongated active dot), Counter (1/5), None
+- **Transitions**: Slide (carousel), Fade (crossfade), Instant
+- Independent desktop/mobile configuration
+- Optional hover flip (auto-advance to image 2 on hover)
+- Loop navigation and auto-return on mouse leave
+
+### Configurable Products
+- Collects images from all children (not just the first)
+- **Images per variant** limit (e.g., 1 = one photo per color)
+- **ConfigurableGallery integration**: filters parent images by variant when `Rollpix_ConfigurableGallery` is installed
 
 ### General
-- **Location Control**: Enable/disable per location (category pages, widgets, search, related, CMS, Page Builder)
-- **Luma + Hyvä Compatible**: Full support for both theme frameworks
-- **Lazy Loading**: Images loaded on first interaction
-- **Dynamic Content**: Auto-initializes for AJAX-loaded content (infinite scroll, sliders)
-- **Accessibility**: Respects `prefers-reduced-motion` preference
-- **CSS Overridable**: All styles use specific classes without `!important`, easy to customize from themes
+- Enable/disable per location (category pages, widgets, search, related, CMS, Page Builder)
+- Lazy loading (images loaded on first interaction)
+- Dynamic content support (AJAX, infinite scroll, sliders)
+- Respects `prefers-reduced-motion` preference
+- All CSS easily overridable from themes
 
-### Hyvä Theme Support
+---
 
-The module includes a sub-module `Rollpix_ImageFlipHoverHyvaCompat` that provides full Hyvä compatibility:
-- Replaces jQuery/RequireJS JS with vanilla JavaScript
-- Same features as Luma: flip, slider, all navigation types, all indicators
-- PHP plugins work identically (data-attributes injected into Image block HTML)
-- CSS is theme-agnostic (works in both Luma and Hyvä)
-- Enable with: `bin/magento module:enable Rollpix_ImageFlipHoverHyvaCompat`
+## Technical Requirements
 
-## Requirements
+| Requirement | Version |
+|---|---|
+| **Module Name** | `rollpix/module-image-flip-hover` |
+| **Magento** | 2.4.x |
+| **PHP** | 7.4 - 8.3 |
 
-- Magento 2.4.x
-- PHP 7.4 or higher
+---
 
 ## Installation
 
-### Via Composer (recommended)
-
 ```bash
-composer require rollpix/module-image-flip-hover
+composer require rollpix/module-image-flip-hover:^2.0
 bin/magento module:enable Rollpix_ImageFlipHover
 bin/magento setup:upgrade
 bin/magento setup:di:compile
+bin/magento setup:static-content:deploy -f
 bin/magento cache:flush
 ```
 
-### Manual Installation
-
-1. Create the directory `app/code/Rollpix/ImageFlipHover`
-2. Copy all module files to this directory
-3. Run the following commands:
-
+For Hyvä themes, also enable:
 ```bash
-bin/magento module:enable Rollpix_ImageFlipHover
+bin/magento module:enable Rollpix_ImageFlipHoverHyvaCompat
 bin/magento setup:upgrade
-bin/magento setup:di:compile
-bin/magento cache:flush
 ```
+
+---
 
 ## Configuration
 
-Navigate to **Stores > Configuration > General > Image Flip on Hover**
+Navigate to **Stores > Configuration > ROLLPIX > Image Flip Hover**.
 
 ### General Settings
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Enable Image Flip on Hover | Enable or disable the module globally | Yes |
-| Primary Image Role | The image role to display on hover (includes "Second Gallery Image" option) | Second Gallery Image |
-| Fallback Image Role | Used when product doesn't have the primary role image | Second Gallery Image |
-| Animation Type | Type of transition animation | Fade |
-| Animation Speed (ms) | Duration of the animation in milliseconds | 300 |
+| Field | Description | Default |
+|---|---|---|
+| Enable | Activate/deactivate the module | Yes |
+| Hover Mode | **Flip** (single alternate image) or **Slider** (full gallery) | Flip |
+| Desktop Only | Disable on mobile devices (< 768px) | Yes |
 
-### Enable Locations
+### Flip Mode Settings
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| Category Pages | Enable for product listing pages | Yes |
-| Product Widgets | Enable for slider/grid widgets | Yes |
-| Search Results | Enable for search result pages | Yes |
-| Related/Upsell/Cross-sell | Enable for related product blocks | Yes |
-| CMS Blocks | Enable for product widgets in CMS blocks/pages | Yes |
-| Page Builder | Enable for Page Builder Products widget | Yes |
+| Field | Description | Default |
+|---|---|---|
+| Primary Image Role | Image role to show on hover | Second Gallery Image |
+| Fallback Image Role | Used when primary role not found | Second Gallery Image |
+| Animation Type | Transition effect | Fade |
+| Animation Speed (ms) | Animation duration | 300 |
 
-## Image Role Options
+### Slider Mode Settings
 
-### Native Magento Roles
+| Field | Description | Default |
+|---|---|---|
+| Enable Hover Flip | Auto-advance to image 2 on hover | Yes |
+| Transition Type | Slide / Fade / Instant | Fade |
+| Transition Speed (ms) | Transition duration | 250 |
+| Max Images | Maximum gallery images per product (2-20) | 8 |
+| Images per Variant | For configurables: max images per child. 0 = all | 0 |
+| Loop Navigation | Circular navigation (last → first) | No |
+| Return to Main Image | Return to image 1 on mouse leave | Yes |
 
-- **Base Image** (`image`)
-- **Small Image** (`small_image`)
-- **Thumbnail** (`thumbnail`)
-- **Swatch Image** (`swatch_image`)
+**Desktop Navigation** (multiselect): Arrows, Mouse Tracking, Click on Indicators
 
-### Special Options
+**Mobile Navigation** (multiselect): Arrows, Swipe, Click on Indicators
 
-- **Second Gallery Image (Position #2)**: Automatically uses the second image in the product's media gallery ordered by position. This is the easiest option as it doesn't require assigning a specific role to images.
+**Indicators** (per device): Bars, Dots, Pills, Counter, None — with position (top/bottom/below)
 
-### Custom Image Roles
+### Locations
 
-Any custom `media_image` type attribute you create will automatically appear in the dropdown. For example, if you create an attribute with code `rpx_product_image_on_hover`, it will be available for selection.
+Enable/disable for: Category Pages, Widgets, Search Results, Related/Upsell/Cross-sell, CMS Blocks, Page Builder.
 
-## Creating a Custom Image Role
+---
 
-To create a custom image role (e.g., "Image on Hover"):
+## Configurable Products
 
-1. Go to **Stores > Attributes > Product**
-2. Click **Add New Attribute**
-3. Set the following:
-   - Default Label: `Image on Hover`
-   - Catalog Input Type: **Media Image**
-   - Attribute Code: `image_on_hover` (or any code you prefer)
-4. In **Storefront Properties**:
-   - Used in Product Listing: This option is NOT available for Media Image attributes (this is normal)
-5. Save the attribute
-6. Add it to your attribute set(s) under **Stores > Attributes > Attribute Set**
-7. The new role will automatically appear in the module's configuration dropdown
+The slider collects images from **all children** of a configurable product. Combined with the **Images per Variant** setting:
 
-### Assigning Images to Custom Roles
+| Setting | Result (3 colors × 7 photos each) |
+|---|---|
+| `0` (all) | Shows up to 8 images (max_images cap) |
+| `1` | Shows 3 images (first photo of each color) |
+| `2` | Shows 6 images (first 2 of each color) |
 
-1. Edit a product in the admin
-2. Go to **Images and Videos**
-3. Upload or select an image
-4. Click on the image to open the detail panel
-5. In the **Role** dropdown, select your custom role (e.g., "Image on Hover")
-6. Save the product
+### ConfigurableGallery Integration
 
-## Animation Types
+When `Rollpix_ConfigurableGallery` is installed, the slider reads the `associated_attributes` column to group parent images by variant. This works when images are uploaded to the configurable parent and associated to colors via ConfigurableGallery's admin UI.
 
-| Animation | Description |
-|-----------|-------------|
-| Fade | Simple opacity crossfade |
-| Slide Left | Image slides from right to left |
-| Slide Right | Image slides from left to right |
-| Slide Up | Image slides from bottom to top |
-| Slide Down | Image slides from top to bottom |
-| Zoom | Primary zooms in while flip zooms out |
-| Flip Horizontal | 3D card flip on Y-axis |
-| Flip Vertical | 3D card flip on X-axis |
+---
 
-## Compatibility with Third-Party Modules
+## Hyvä Theme Support
 
-This module works with any third-party slider/grid module that uses Magento's standard `Magento\Catalog\Block\Product\ImageFactory` to render product images. This includes:
+The module includes `Rollpix_ImageFlipHoverHyvaCompat`, a sub-module that:
 
-- Native Magento product widgets
-- Most third-party product sliders (Slick, Owl Carousel, Swiper)
-- Product grids/carousels
-- Custom product listing modules
+- Replaces jQuery/RequireJS JS with vanilla JavaScript
+- Supports all features: flip, slider, all navigation types, all indicators
+- CSS is theme-agnostic (works in both Luma and Hyvä)
 
-The module uses plugins that hook into the core image rendering pipeline, so it doesn't require specific support from third-party modules.
-
-### For AJAX-Loaded Content
-
-The JavaScript automatically detects dynamically loaded content through:
-- MutationObserver for DOM changes
-- `contentUpdated` event (Magento standard)
-- Common slider library events (Slick, Owl, Swiper)
-- AJAX completion events
-
-## Technical Documentation
-
-### Architecture Overview
-
-The module uses Magento's plugin system to intercept the product image rendering pipeline:
-
-```
-Product Collection Load
-        │
-        ▼
-┌─────────────────────────────┐
-│   CollectionPlugin          │  Adds flip image attributes to collection query
-│   (beforeLoad)              │
-└─────────────────────────────┘
-        │
-        ▼
-┌─────────────────────────────┐
-│   ImageFactory Plugin       │  Attaches flip image data to Image block
-│   (afterCreate)             │
-└─────────────────────────────┘
-        │
-        ▼
-┌─────────────────────────────┐
-│   Image Block Plugin        │  Injects flip image HTML into output
-│   (afterToHtml)             │
-└─────────────────────────────┘
-        │
-        ▼
-┌─────────────────────────────┐
-│   Frontend JavaScript       │  Handles hover events, lazy loading
-│   (image-flip.js)           │
-└─────────────────────────────┘
+Enable with:
+```bash
+bin/magento module:enable Rollpix_ImageFlipHoverHyvaCompat
 ```
 
-### Files Structure
+> **Note**: Disable HyvaCompat when using Luma theme.
 
-```
-Rollpix/ImageFlipHover/
-├── etc/
-│   ├── module.xml              # Module declaration
-│   ├── di.xml                  # Dependency injection & plugin config
-│   ├── config.xml              # Default configuration values
-│   ├── acl.xml                 # Admin ACL resources
-│   └── adminhtml/
-│       └── system.xml          # Admin configuration fields
-├── Helper/
-│   └── Config.php              # Configuration helper
-├── Model/
-│   ├── ImageFlipService.php    # Core service for flip image resolution
-│   └── Config/Source/
-│       ├── ImageRoles.php      # Source model for image roles dropdown
-│       └── AnimationType.php   # Source model for animation types
-├── Plugin/
-│   ├── Product/
-│   │   ├── ImagePlugin.php     # Plugin for ImageFactory
-│   │   └── CollectionPlugin.php # Plugin for product collections
-│   └── Block/Product/
-│       └── ImagePlugin.php     # Plugin for Image block HTML
-├── ViewModel/
-│   └── ImageFlip.php           # ViewModel for frontend templates
-├── view/frontend/
-│   ├── layout/
-│   │   └── default.xml         # Layout updates
-│   ├── templates/
-│   │   ├── product/
-│   │   │   └── image_with_flip.phtml
-│   │   └── js/
-│   │       └── init.phtml      # JS initialization template
-│   ├── web/
-│   │   ├── css/
-│   │   │   └── image-flip.css  # Animation styles
-│   │   └── js/
-│   │       └── image-flip.js   # Hover handling & lazy loading
-│   └── requirejs-config.js
-├── composer.json
-├── registration.php
-└── README.md
-```
-
-### Key Classes
-
-#### `ImageFlipService`
-
-The core service that resolves which image to use for the flip effect:
-
-```php
-// Get flip image URL for a product
-$flipImageUrl = $imageFlipService->getFlipImageUrl($product, $imageId);
-
-// Check if product has a flip image
-$hasFlipImage = $imageFlipService->hasFlipImage($product);
-
-// Get complete flip image data
-$data = $imageFlipService->getFlipImageData($product, $imageId);
-// Returns: ['hasFlipImage' => bool, 'flipImageUrl' => string, 'animationType' => string, 'animationSpeed' => int]
-```
-
-**Image Resolution Order:**
-1. Try primary role from configuration
-2. If not found, try fallback role
-3. For `second_image` role, queries the media gallery directly
-
-#### `Config Helper`
-
-Provides access to all module configuration:
-
-```php
-$config->isEnabled();                    // bool
-$config->getPrimaryRole();               // string
-$config->getFallbackRole();              // string
-$config->getAnimationType();             // string
-$config->getAnimationSpeed();            // int
-$config->isEnabledForCategoryPage();     // bool
-$config->isEnabledForWidgetProducts();   // bool
-$config->isEnabledForSearchResults();    // bool
-$config->isEnabledForRelatedProducts();  // bool
-$config->isEnabledForCmsBlocks();        // bool
-$config->isEnabledForPageBuilder();      // bool
-$config->getConfigArray();               // array with all config
-```
-
-### Database Queries
-
-For custom image roles, the module queries the EAV tables directly:
-
-```sql
--- Get attribute ID
-SELECT attribute_id FROM eav_attribute
-WHERE attribute_code = 'your_role' AND entity_type_id = 4;
-
--- Get image value
-SELECT value FROM catalog_product_entity_varchar
-WHERE attribute_id = ? AND entity_id = ?;
-```
-
-For "Second Gallery Image":
-
-```sql
-SELECT mg.value FROM catalog_product_entity_media_gallery mg
-JOIN catalog_product_entity_media_gallery_value_to_entity mgvte
-    ON mg.value_id = mgvte.value_id
-LEFT JOIN catalog_product_entity_media_gallery_value mgv
-    ON mg.value_id = mgv.value_id AND mgvte.entity_id = mgv.entity_id
-WHERE mgvte.entity_id = ?
-    AND mg.media_type = 'image'
-    AND COALESCE(mgv.disabled, 0) = 0
-ORDER BY COALESCE(mgv.position, 999) ASC
-LIMIT 1 OFFSET 1;
-```
-
-### CSS Classes
-
-The module adds the following CSS classes:
-
-| Class | Description |
-|-------|-------------|
-| `.product-image-flip-container` | Wrapper container for the image |
-| `.product-image-flip-primary` | Primary (default) image |
-| `.product-image-flip-hover` | Hover (flip) image |
-| `.flip-animation-{type}` | Animation-specific class |
-| `.flip-loaded` | Added when flip image is loaded |
-
-### JavaScript API
-
-```javascript
-// Manually initialize flip functionality
-window.rollpixImageFlip.init();
-
-// Re-initialize after AJAX content load
-$(document).on('contentUpdated', function() {
-    window.rollpixImageFlip.init();
-});
-
-// Preload all flip images
-window.rollpixImageFlip.preload();
-
-// Enable lazy preloading with IntersectionObserver
-window.rollpixImageFlip.lazyPreload();
-```
-
-### Events
-
-The JavaScript listens for these events to handle dynamic content:
-
-- `contentUpdated` (Magento standard)
-- `pagebuilder:renderAfter` (Page Builder)
-- `ajaxComplete` (jQuery AJAX)
-- `init`, `reInit`, `afterChange` (Slick slider)
-- `initialized.owl.carousel`, `refreshed.owl.carousel` (Owl Carousel)
-- `swiperInit`, `swiperSlideChangeEnd` (Swiper)
-- `amscroll_after_load` (Amasty extensions)
-- `catalog_product_list_loaded` (Various extensions)
+---
 
 ## Troubleshooting
 
-### Flip image not showing
+### Flip/slider not showing
+1. Verify the module is enabled and the location is active
+2. Check the product has 2+ images in its gallery
+3. Clear cache: `bin/magento cache:flush`
 
-1. Verify the product has an image assigned to the configured role
-2. For "Second Gallery Image", ensure the product has at least 2 images in the gallery
-3. Check if the module is enabled for the current location
-4. Clear Magento cache: `bin/magento cache:flush`
-5. Regenerate static content: `bin/magento setup:static-content:deploy`
-6. Verify JavaScript is loading (check browser console for errors)
+### Images not loading on hover
+1. Clear static content: `bin/magento setup:static-content:deploy -f`
+2. Check browser console for JS errors
 
-### Custom role not appearing in dropdown
+### Slider images cropped or misaligned
+1. Clear `var/view_preprocessed/` and redeploy static content
+2. Check for CSS conflicts with your theme
 
-1. Ensure the attribute has **Catalog Input Type** set to **Media Image**
-2. Clear config cache: `bin/magento cache:clean config`
-3. Check that the attribute exists in `eav_attribute` table
-
-### Animation not working
-
-1. Check if `prefers-reduced-motion` is enabled in your OS
-2. Verify CSS is loading correctly
-3. Check for CSS conflicts with your theme (inspect element)
-
-### Third-party module not working
-
-1. Ensure the module uses `Magento\Catalog\Block\Product\ImageFactory` for rendering
-2. Check if the module triggers `contentUpdated` event after AJAX loading
-3. You may need to manually call `imageFlip.init()` after content loads
-
-### Error after module update
-
-Clear generated files and recompile:
-
+### Error after update
 ```bash
-rm -rf generated/code/* generated/metadata/*
+rm -rf generated/code/*
 bin/magento setup:di:compile
 bin/magento cache:flush
 ```
 
-## Uninstallation
-
-### Via Composer
-
-```bash
-bin/magento module:disable Rollpix_ImageFlipHover
-composer remove rollpix/module-image-flip-hover
-bin/magento setup:upgrade
-bin/magento cache:flush
-```
-
-### Manual
-
-```bash
-bin/magento module:disable Rollpix_ImageFlipHover
-rm -rf app/code/Rollpix/ImageFlipHover
-bin/magento setup:upgrade
-bin/magento cache:flush
-```
+---
 
 ## Changelog
 
-### Version 1.1.0
-- Added Page Builder Products widget support
-- Added CMS blocks location option
-- Added touch device support (tap to toggle)
-- Improved dynamic content detection
-- Added debounced initialization to prevent multiple rapid calls
-- Added IntersectionObserver for lazy preloading option
-- Added support for Amasty, Mirasvit and other popular extensions
-- Added global `window.rollpixImageFlip` API
-- Fixed double event binding on dynamic content
+See [CHANGELOG.md](CHANGELOG.md) for full version history.
 
-### Version 1.0.0
-- Initial release
-- Support for native and custom image roles
-- "Second Gallery Image" option
-- 8 animation types
-- Location-based enable/disable
-- Third-party module compatibility
+---
 
 ## License
 
 MIT License
 
-## Author
-Nicolas Marquevich
-Rollpix - https://rollpix.com
+---
 
 ## Support
 
-For issues and feature requests, please create an issue
+- **Issues**: https://github.com/ROLLPIX/M2-ImageFlipHover/issues
+- **Website**: [www.rollpix.com](https://www.rollpix.com)
+
+---
+
+Made with ❤️ by [ROLLPIX](https://www.rollpix.com)
