@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-04-12
+
+### Changed
+- **Admin config reorganization**: separated Flip and Slider settings into dedicated groups with cross-group visibility dependencies
+- Replaced `Desktop Only` toggle with independent `Enable Desktop` and `Enable Mobile` toggles
+- Config paths reorganized: `general/primary_role` → `flip/primary_role`, desktop/mobile settings moved to their own groups
+- Flip mode on mobile auto-upgrades to slider (touch has no hover)
+- `hover-slider.js` now handles all cases (flip + slider, desktop + mobile)
+- README rewritten for public repo: EN + ES, Rollpix format with compatibility badges
+
+### Fixed
+- Mouseleave auto-return to first image now has 500ms debounce to prevent accidental return when clicking edge arrows
+- Flip mode desktop: no controls shown, only hover to image 2 with fade
+- Slider mode: navigation restricted to image 0-1 only in desktop flip mode
+- README and README_es.md with Rollpix standard format (sponsor, bilingual links, badges)
+
+### Removed
+- `auto_return` admin config option (always active now with smart debouncing)
+
 ## [2.0.0] - 2026-04-10
 
 ### Added

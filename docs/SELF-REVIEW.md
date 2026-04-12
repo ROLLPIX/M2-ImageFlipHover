@@ -1,8 +1,8 @@
-# Self-Review — Rollpix_ImageFlipHover v2.0.0
+# Self-Review — Rollpix_ImageFlipHover v2.0.1
 
 **Builder:** nmarquev
-**Date:** 2026-04-10
-**Branch:** hover-slider
+**Date:** 2026-04-12
+**Branch:** main
 
 ---
 
@@ -94,4 +94,4 @@
 Confirmo que verifique personalmente todos los items marcados arriba.
 El modulo esta listo para peer review.
 
-**Firmado:** nmarquev — 2026-04-10
+**Firmado:** nmarquev — 2026-04-12
