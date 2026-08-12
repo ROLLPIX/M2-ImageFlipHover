@@ -14,6 +14,20 @@ define([
 ], function ($) {
     'use strict';
 
+    // Per-container state, kept OUTSIDE the DOM and outside jQuery's data store.
+    // Third-party code that calls jQuery.cleanData() over our subtree (see
+    // bindDelegatedEvents) wipes $.data and every directly-bound handler, so the
+    // state cannot live on the element itself. Shared across component instances
+    // so the delegated handlers can serve any container. (WE-55997)
+    var stateMap = new WeakMap();
+    var delegatesBound = false;
+
+    function stateOf(el) {
+        var $c = $(el).closest('[data-hover-slider="true"]');
+
+        return $c.length ? stateMap.get($c[0]) : null;
+    }
+
     return function (config) {
         if (!config.enabled) {
             return;
@@ -68,6 +82,7 @@ define([
             };
 
             $container.addClass('slider-initialized');
+            stateMap.set($container[0], state);
 
             // Preload all images into browser cache
             for (var i = 1; i < images.length; i++) {
@@ -78,8 +93,8 @@ define([
             if (showControls) {
                 if (deviceCfg.nav && deviceCfg.nav.indexOf('arrows') !== -1) createArrows(state);
                 if (deviceCfg.nav && deviceCfg.nav.indexOf('mouse_tracking') !== -1 && !isTouchDevice) {
+                    // The delegated mousemove listener keys off this class.
                     $container.addClass('nav-mouse-tracking');
-                    initMouseTracking(state);
                 }
                 if (deviceCfg.nav && deviceCfg.nav.indexOf('swipe') !== -1) initSwipe(state);
                 createIndicators(state);
@@ -199,15 +214,75 @@ define([
 
         function bindHoverEvents(state) {
             state.lastInteraction = 0;
+        }
 
-            state.$container.on('mouseenter.hoverSlider', function () {
+        // =============================================
+        // DELEGATED EVENTS
+        // =============================================
+
+        /**
+         * Every interaction is bound ONCE on document instead of per element.
+         *
+         * Amasty_Label calls slick('refresh') on the surrounding carousel (on init and
+         * from a ResizeObserver); slick's destroy() → cleanUpRows() → jQuery.empty()
+         * runs jQuery.cleanData() over the whole subtree, which silently drops every
+         * handler bound directly to our arrows/dots/container. The nodes survive (slick
+         * re-appends them) and .slider-initialized stays set, so the controls used to
+         * end up visible but dead — and the click bubbled to the product link, opening
+         * the PDP instead of paging the gallery. Handlers on document are out of reach
+         * of that wipe. (WE-55997)
+         */
+        function bindDelegatedEvents() {
+            if (delegatesBound) return;
+            delegatesBound = true;
+
+            var $doc = $(document);
+
+            $doc.on('click.hoverSlider', '.hover-slider-arrow', function (e) {
+                var state = stateOf(this);
+                if (!state) return;
+                e.preventDefault();
+                e.stopPropagation();
+                state.lastInteraction = Date.now();
+                goToSlide(state, state.currentIndex + ($(this).hasClass('hover-slider-arrow--prev') ? -1 : 1));
+            });
+
+            $doc.on('click.hoverSlider', '.hover-slider-indicators .clickable', function (e) {
+                var state = stateOf(this);
+                if (!state) return;
+                e.preventDefault();
+                e.stopPropagation();
+                state.lastInteraction = Date.now();
+                goToSlide(state, parseInt($(this).attr('data-slide-index'), 10) || 0);
+            });
+
+            // mouseenter/mouseleave do not bubble, so delegate their bubbling twins and
+            // discard moves that stay inside the same container.
+            $doc.on('mouseover.hoverSlider', '[data-hover-slider="true"]', function (e) {
+                var state = stateMap.get(this);
+                if (!state || $.contains(this, e.relatedTarget) || this === e.relatedTarget) return;
                 if (state.cfg.hoverFlip && state.currentIndex === 0) goToSlide(state, 1);
             });
-            state.$container.on('mouseleave.hoverSlider', function () {
+
+            $doc.on('mouseout.hoverSlider', '[data-hover-slider="true"]', function (e) {
+                var state = stateMap.get(this);
+                if (!state || $.contains(this, e.relatedTarget) || this === e.relatedTarget) return;
                 // Skip if user clicked arrow/dot within last 500ms (prevents accidental return)
                 if (Date.now() - state.lastInteraction > 500) {
                     goToSlide(state, 0);
                 }
+            });
+
+            $doc.on('mousemove.hoverSlider', '[data-hover-slider="true"].nav-mouse-tracking', function (e) {
+                var state = stateMap.get(this);
+                if (!state || state.trackingRaf) return;
+                state.trackingRaf = requestAnimationFrame(function () {
+                    var rect = state.$container[0].getBoundingClientRect();
+                    var relativeX = (e.clientX - rect.left) / rect.width;
+                    var idx = Math.min(state.images.length - 1, Math.max(0, Math.floor(relativeX * state.images.length)));
+                    goToSlide(state, idx);
+                    state.trackingRaf = null;
+                });
             });
         }
 
@@ -222,9 +297,8 @@ define([
             var $prev = $('<button class="hover-slider-arrow hover-slider-arrow--prev" type="button">' + prevSvg + '</button>');
             var $next = $('<button class="hover-slider-arrow hover-slider-arrow--next" type="button">' + nextSvg + '</button>');
 
-            $prev.on('click.hoverSlider', function (e) { e.preventDefault(); e.stopPropagation(); state.lastInteraction = Date.now(); goToSlide(state, state.currentIndex - 1); });
-            $next.on('click.hoverSlider', function (e) { e.preventDefault(); e.stopPropagation(); state.lastInteraction = Date.now(); goToSlide(state, state.currentIndex + 1); });
-
+            // No per-button binding: clicks are handled by the delegated listener on
+            // document, which survives jQuery.cleanData(). (WE-55997)
             state.$container.append($prev).append($next);
             state.$arrows = { $prev: $prev, $next: $next };
             updateArrows(state);
@@ -234,24 +308,6 @@ define([
             if (!state.$arrows || state.cfg.loop) return;
             state.$arrows.$prev.toggleClass('disabled', state.currentIndex === 0);
             state.$arrows.$next.toggleClass('disabled', state.currentIndex === state.images.length - 1);
-        }
-
-        // =============================================
-        // MOUSE TRACKING
-        // =============================================
-
-        function initMouseTracking(state) {
-            var rafId = null;
-            state.$container.on('mousemove.hoverSlider', function (e) {
-                if (rafId) return;
-                rafId = requestAnimationFrame(function () {
-                    var rect = state.$container[0].getBoundingClientRect();
-                    var relativeX = (e.clientX - rect.left) / rect.width;
-                    var idx = Math.min(state.images.length - 1, Math.max(0, Math.floor(relativeX * state.images.length)));
-                    goToSlide(state, idx);
-                    rafId = null;
-                });
-            });
         }
 
         // =============================================
@@ -299,11 +355,13 @@ define([
                 else if (type === 'dots') { $item = $('<span class="hover-slider-dot"></span>'); }
                 else if (type === 'pills') { $item = $('<span class="hover-slider-pill"></span>'); }
                 if (i === 0) $item.addClass('active');
-                if (clickable) { $item.addClass('clickable').data('index', i); }
+                if (clickable) { $item.addClass('clickable').attr('data-slide-index', i); }
                 $w.append($item);
             }
 
-            if (clickable) $w.on('click', '.clickable', function (e) { e.preventDefault(); e.stopPropagation(); state.lastInteraction = Date.now(); goToSlide(state, $(this).data('index')); });
+            // Indicator clicks are handled by the delegated listener on document; the
+            // index travels in data-slide-index (set above) instead of $.data(), which
+            // cleanData() wipes. (WE-55997)
             state.$container.append($w);
             state.$indicators = $w;
         }
@@ -340,7 +398,7 @@ define([
             $(document).on('amscroll_after_load contentUpdate catalog_product_list_loaded', debouncedInit);
         }
 
-        $(function () { initSliders(); observeDynamicContent(); });
+        $(function () { bindDelegatedEvents(); initSliders(); observeDynamicContent(); });
         if (typeof require !== 'undefined') { require(['mage/apply/main'], function () { setTimeout(initSliders, 500); }); }
 
         window.rollpixHoverSlider = { init: initSliders };

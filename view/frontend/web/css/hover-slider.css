@@ -90,11 +90,16 @@
 }
 
 /* === Navigation Arrows === */
+/* z-index must clear product-label overlays that share this stacking context:
+   Amasty_Label renders .amlabel-position-wrapper as a sibling inside
+   .product-image-container at z-index 995, and its "middle-right" position lands
+   exactly on top of the next arrow — the arrow was painted underneath and never
+   received the click. (WE-55997) */
 .hover-slider-arrow {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 10;
+    z-index: 1000;
     width: 30px;
     height: 30px;
     background: rgba(255, 255, 255, 0.85);
@@ -133,9 +138,11 @@
 }
 
 /* === Indicators === */
+/* Same stacking fight as the arrows above: a bottom-positioned product label would
+   otherwise cover the dots/bars. (WE-55997) */
 .hover-slider-indicators {
     display: flex;
-    z-index: 10;
+    z-index: 1000;
     width: 100%;
     gap: 0;
     pointer-events: none;
@@ -199,7 +206,7 @@
     font-size: 11px; color: #fff;
     background: rgba(0, 0, 0, 0.45);
     padding: 2px 8px; border-radius: 10px;
-    position: absolute; right: 8px; z-index: 10;
+    position: absolute; right: 8px; z-index: 1000;
 }
 .hover-slider-counter--top { top: 8px; }
 .hover-slider-counter--bottom { bottom: 8px; }

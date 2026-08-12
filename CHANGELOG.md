@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-08-12
+
+### Fixed
+- Slider controls went dead inside product carousels that also render Amasty product labels: the arrows stayed visible but paged nothing, and clicking one opened the product page instead. `Amasty_Label/js/label.js` calls `slick('refresh')` on the surrounding carousel (on init, and again from a `ResizeObserver`), and slick's `destroy()` → `cleanUpRows()` → `jQuery.fn.empty()` runs `jQuery.cleanData()` over the whole subtree — wiping every handler bound directly to our arrows, dots and container, plus their `$.data`. The nodes survive (slick re-appends them) and `.slider-initialized` stays set, so `initSliders()` never re-bound them and the click bubbled to the product link. All interaction is now bound **once on `document`** via delegation, with per-container state in a `WeakMap` instead of on the element; `mouseenter`/`mouseleave` become delegated `mouseover`/`mouseout` (the former do not bubble) and the indicator index travels in `data-slide-index` rather than `$.data()`. A single labelled product used to break the whole carousel, since the refresh wipes every item's handlers. (WE-55997)
+- Arrows, indicators and counter moved from `z-index: 10` to `1000`. Amasty renders `.amlabel-position-wrapper` as a sibling inside `.product-image-container` at `z-index: 995`, and its `middle-right` position lands exactly on the next arrow — the arrow was painted underneath the label and never got the click. (WE-55997)
+
 ## [2.1.3] - 2026-06-25
 
 ### Fixed
