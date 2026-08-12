@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.5] - 2026-08-12
+
+### Fixed
+- Product images rendered inside third-party markup came out as empty boxes — most visibly in the Amasty Xsearch results dropdown, where every thumbnail was blank. `.hover-slider-viewport` is a `<span>` whose only in-flow content is an absolutely positioned image, so with `position: static` it collapses to height 0; `clip-path: inset(0)` then clips its absolute descendants regardless of containing block, erasing the image while it still reported a correct bounding box (`naturalWidth` set, `getBoundingClientRect()` 125×125, yet absent from `elementsFromPoint()`). The rule that positioned the viewport was scoped to Luma's `.product-image-container`, and the dropdown renders `.amsearch-product-image-container`, so it never matched. The viewport now fills its nearest positioned ancestor unconditionally. This also restored native lazy loading in the dropdown: a clipped image has no visible area, so the browser never issued the request and the thumbnails stayed at `naturalWidth 0` no matter how long you waited. (WE-55995)
+
 ## [2.1.4] - 2026-08-12
 
 ### Fixed

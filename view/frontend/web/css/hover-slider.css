@@ -15,10 +15,23 @@
 }
 
 /* Viewport must be block for overflow:hidden to work (it's a <span>) */
+/* It also fills its nearest positioned ancestor unconditionally. The viewport is a
+   <span> whose only in-flow content is an absolutely positioned image, so left
+   static it collapses to height 0 — and `clip-path` clips absolute descendants
+   regardless of containing block, so the image is clipped away entirely while
+   still reporting a correct bounding box. That happened wherever the surrounding
+   markup is not Luma's `.product-image-container`: the Amasty Xsearch dropdown
+   renders `.amsearch-product-image-container`, so the Luma rule below never
+   matched and the search results showed empty boxes. (WE-55995) */
 .hover-slider-viewport {
     display: block;
     overflow: hidden;
     clip-path: inset(0);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 /* Luma: viewport fills product-image-wrapper */
