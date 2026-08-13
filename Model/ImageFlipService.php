@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Rollpix\ImageFlipHover\Model;
 
 use Rollpix\ImageFlipHover\Helper\Config;
+use Magento\Catalog\Api\Data\ProductAttributeInterface;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Helper\Image as ImageHelper;
 use Magento\Catalog\Model\Product;
@@ -62,6 +63,11 @@ class ImageFlipService
      * @param ResourceConnection $resourceConnection
      * @param StoreManagerInterface $storeManager
      */
+    /**
+     * @var array<string, string|null> Role values resolved from the DB, per request
+     */
+    private $roleValueCache = [];
+
     public function __construct(
         Config $config,
         ImageHelper $imageHelper,
@@ -181,6 +187,24 @@ class ImageFlipService
             $imageValue = $this->getImageFromGalleryByRole($product, $role);
         }
 
+        /*
+         * Last resort: read the value straight from the EAV table.
+         *
+         * `CollectionPlugin` adds the role attribute with `addAttributeToSelect()`, but it
+         * can only do that for the collection classes it is declared on. A Magento 2.4 PLP
+         * does not necessarily use `Magento\Catalog\Model\ResourceModel\Product\Collection`:
+         * with Elasticsearch/OpenSearch — and more so with third-party search modules, which
+         * bring their own collection classes — the listing is built elsewhere and the
+         * attribute never enters the SELECT. The product then carries neither the role nor
+         * the media gallery, and every card silently came out with an empty flip URL.
+         *
+         * Chasing collection classes one by one does not scale, so the value is resolved
+         * here, cached per request.
+         */
+        if (!$imageValue || $imageValue === 'no_selection') {
+            $imageValue = $this->getRoleValueFromDb($product, $role);
+        }
+
         if (!$imageValue || $imageValue === 'no_selection') {
             return null;
         }
@@ -205,6 +229,65 @@ class ImageFlipService
             // If image helper fails, return direct URL
             return $this->mediaConfig->getMediaUrl($imageValue);
         }
+    }
+
+    /**
+     * Read a media-image attribute value directly from the EAV table.
+     *
+     * Store value wins over the default one. Results are cached per request, so a listing
+     * costs one indexed single-row query per product at most, and only when the collection
+     * did not provide the attribute.
+     *
+     * @param ProductInterface|Product $product
+     * @param string $role
+     * @return string|null
+     */
+    private function getRoleValueFromDb($product, string $role): ?string
+    {
+        $productId = (int) $product->getId();
+        if (!$productId || $role === 'second_image') {
+            return null;
+        }
+
+        $storeId = (int) ($product->getStoreId() ?: $this->storeManager->getStore()->getId());
+        $cacheKey = $productId . '/' . $role . '/' . $storeId;
+        if (array_key_exists($cacheKey, $this->roleValueCache)) {
+            return $this->roleValueCache[$cacheKey];
+        }
+
+        $value = null;
+        try {
+            $connection = $this->resourceConnection->getConnection();
+            $select = $connection->select()
+                ->from(
+                    ['v' => $this->resourceConnection->getTableName('catalog_product_entity_varchar')],
+                    ['value']
+                )
+                ->join(
+                    ['a' => $this->resourceConnection->getTableName('eav_attribute')],
+                    'a.attribute_id = v.attribute_id',
+                    []
+                )
+                ->join(
+                    ['t' => $this->resourceConnection->getTableName('eav_entity_type')],
+                    't.entity_type_id = a.entity_type_id',
+                    []
+                )
+                ->where('t.entity_type_code = ?', ProductAttributeInterface::ENTITY_TYPE_CODE)
+                ->where('a.attribute_code = ?', $role)
+                ->where('v.entity_id = ?', $productId)
+                ->where('v.store_id IN (?)', [0, $storeId])
+                ->order('v.store_id ' . \Magento\Framework\DB\Select::SQL_DESC)
+                ->limit(1);
+
+            $value = $connection->fetchOne($select) ?: null;
+        } catch (\Exception $e) {
+            $value = null;
+        }
+
+        $this->roleValueCache[$cacheKey] = $value;
+
+        return $value;
     }
 
     /**
