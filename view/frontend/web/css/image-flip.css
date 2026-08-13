@@ -10,6 +10,25 @@
 .has-flip-image {
     position: relative;
     overflow: hidden;
+    /*
+       El template le pone al wrapper un `width: {$imageWidth}px` inline, que es la
+       convención de Luma (la imagen se dimensiona desde view.xml y el contenedor se
+       adapta). En un theme donde la card es una celda de grilla, ese ancho fijo la
+       desborda: con 360px y cuatro columnas aparece scroll horizontal. Acotarlo no
+       cambia nada en Luma, donde el contenedor ya vive dentro de una celda de ese ancho.
+    */
+    max-width: 100%;
+}
+
+/*
+   `.product-image-wrapper` es un <span>, o sea `display: inline` por defecto, y ahí el
+   `padding-bottom` que reserva la proporción no genera alto: el contenedor queda en 0 y,
+   como las dos imágenes van absolutas, la foto desaparece. Luma lo hace `block` con su
+   propio CSS; fuera de Luma no lo hace nadie. Misma idea que WE-55995 con el viewport del
+   slider: no depender del markup de Luma.
+*/
+.has-flip-image .product-image-wrapper {
+    display: block;
 }
 
 .has-flip-image .flip-image-container {

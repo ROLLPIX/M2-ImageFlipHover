@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.6] - 2026-08-12
+
+### Fixed
+- Flip mode produced no alternate image on category listings driven by the search engine. `CollectionPlugin` adds the role attribute with `addAttributeToSelect()` on `Magento\Catalog\Model\ResourceModel\Product\Collection`, but a Magento 2.4 PLP with Elasticsearch/OpenSearch builds the listing from `Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection` instead, so the attribute never entered the SELECT: `$product->getData($role)` came back null, `flip_image_url` was emitted empty and the hover faded the base image out over nothing. The `second_image` fallback failed the same way — that collection does not load the media gallery either. The plugin is now declared for the fulltext collection as well.
+- Flip mode broke the layout outside Luma's markup, the same class of bug as WE-55995 (which only covered the slider viewport). Two causes: the template writes `style="width: {$imageWidth}px"` inline on the wrapper — Luma sizes images from `view.xml` and its container adapts, but where the card is a grid cell that fixed 360px overflowed a four-column grid and produced horizontal scroll; and the proportion is reserved with `padding-bottom` on `.product-image-wrapper`, a `<span>` that is `display: inline` by default, so the padding created no height at all, the container collapsed to 0 and both absolutely positioned images vanished. Luma sets that span to `block` in its own stylesheet; nothing does outside Luma. Added `max-width: 100%` to `.has-flip-image` and `display: block` to `.has-flip-image .product-image-wrapper` — both no-ops under Luma.
+- `Rollpix_ImageFlipHoverHyvaCompat` was never registered when the package was installed through composer: `autoload.files` listed only the root `registration.php`, so `bin/magento module:enable Rollpix_ImageFlipHoverHyvaCompat` — the step the README asks for — failed with *Unknown module*. Only an `app/code` copy of the submodule worked around it. `HyvaCompat/registration.php` is now in `autoload.files`.
+
 ## [2.1.5] - 2026-08-12
 
 ### Fixed

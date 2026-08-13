@@ -27,4 +27,15 @@
                 type="Rollpix\ImageFlipHover\Plugin\Product\CollectionPlugin"
                 sortOrder="10"/>
     </type>
+    <!--
+        Las PLP de Magento 2.4 con Elasticsearch/OpenSearch no arman el listado con la
+        colección de catálogo sino con la de fulltext, que es otra clase. Sin este plugin,
+        el atributo del rol de flip nunca entra en el SELECT y `flip_image_url` vuelve vacío:
+        el hover se activa y no hay segunda imagen que mostrar.
+    -->
+    <type name="Magento\CatalogSearch\Model\ResourceModel\Fulltext\Collection">
+        <plugin name="rollpix_imageflip_fulltext_collection_plugin"
+                type="Rollpix\ImageFlipHover\Plugin\Product\CollectionPlugin"
+                sortOrder="10"/>
+    </type>
 </config>
