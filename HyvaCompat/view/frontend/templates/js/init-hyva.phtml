@@ -25,9 +25,22 @@ $configJson = $viewModel->getConfigJson();
     }
 
     function initAll() {
-        // Mobile: always use slider (flip auto-upgrades to slider on touch)
-        if (config.mode === 'slider' || isTouchDevice) initSliders();
-        else initFlipImages();
+        /*
+         * The PHP side always emits slider markup: `ImagePlugin::afterCreate()` calls
+         * `attachSliderData()` unconditionally, because flip mode IS a slider with
+         * `hoverFlip` (and on touch it upgrades to a full slider). Luma's hover-slider.js
+         * reflects that — it initializes `[data-hover-slider="true"]` unconditionally and
+         * decides flip-vs-slider behaviour inside, from `isFlipOnDesktop`.
+         *
+         * Branching here on `config.mode` sent flip mode on desktop to `initFlipImages()`,
+         * which looks for `[data-flip-image="true"]` — markup the module has not emitted
+         * since the slider rewrite. Nothing initialized: the cards rendered with a correct
+         * viewport and gallery, and hovering did nothing at all.
+         */
+        initSliders();
+
+        // Legacy `[data-flip-image]` markup (v1 template / custom themes). No-op if absent.
+        initFlipImages();
     }
 
     // =============================================

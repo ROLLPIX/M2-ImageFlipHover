@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.8] - 2026-08-12
+
+### Fixed
+- Flip mode did nothing at all on Hyvä desktop: cards rendered with a correct viewport, gallery and `data-slider-config`, and hovering produced no reaction. `initAll()` in the Hyvä port branches on `config.mode` and sends flip mode to `initFlipImages()`, which looks for `[data-flip-image="true"]` — markup the module has not emitted since the slider rewrite, because `ImagePlugin::afterCreate()` always calls `attachSliderData()` (flip mode is a slider with `hoverFlip`). Luma's `hover-slider.js` already reflects that: it initializes `[data-hover-slider="true"]` unconditionally and decides flip-vs-slider behaviour inside, from `isFlipOnDesktop`. The Hyvä port now does the same, and still runs the legacy flip path for any `[data-flip-image]` markup left over.
+
 ## [2.1.7] - 2026-08-12
 
 ### Fixed
