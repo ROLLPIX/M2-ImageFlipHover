@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.7] - 2026-08-12
+
+### Fixed
+- Flip mode still produced no alternate image on category listings, even with the fulltext-collection plugin added in 2.1.6. `CollectionPlugin` can only add the role attribute to the collection classes it is declared on, and a Magento 2.4 PLP does not necessarily use `Magento\Catalog\Model\ResourceModel\Product\Collection` — with Elasticsearch/OpenSearch, and more so with third-party search modules that ship their own collection classes, the listing is built elsewhere and the attribute never enters the SELECT. The product then carries neither the role value nor the media gallery, so both the primary role and the `second_image` fallback resolved to null and every card was emitted with `has_flip_image` set but an empty `flip_image_url`: the hover fired and faded the base image out over nothing. Verified against a store where the role attribute had values for 325 products and not one card produced a URL. Rather than chase collection classes, `ImageFlipService` now falls back to reading the attribute straight from `catalog_product_entity_varchar` (store value first, then default), cached per request — at most one indexed single-row query per product, and only when the collection did not provide the attribute.
+
 ## [2.1.6] - 2026-08-12
 
 ### Fixed
