@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Note on 2.1.6 / 2.1.7
+Both releases were driven by an empty `flip_image_url` on every card of a Hyvä listing, attributed to the role attribute never entering the collection SELECT. That diagnosis was wrong: since the slider rewrite `ImagePlugin::afterCreate()` always calls `attachSliderData()`, so `attachFlipData()` — the only writer of `flip_image_url` — is dead code and the field is *expected* to be empty. The actual defect was in the Hyvä init and is fixed in 2.1.8. The 2.1.6/2.1.7 changes are still correct on their own terms and worth keeping (the `HyvaCompat/registration.php` autoload entry is a real packaging bug; the `max-width`/`display:block` rules and the EAV fallback harden the legacy `[data-flip-image]` path for themes that render it), but neither was what kept flip mode from working.
+
 ## [2.1.8] - 2026-08-12
 
 ### Fixed
